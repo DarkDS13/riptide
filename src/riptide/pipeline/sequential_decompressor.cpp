@@ -1,8 +1,5 @@
 #include <riptide/pipeline/sequential_decompressor.hpp>
 
-#include <algorithm>
-
-#include <riptide/common/error.hpp>
 #include <riptide/gzip/crc32.hpp>
 #include <riptide/gzip/gzip_format.hpp>
 #include <riptide/inflate/chunk_decoder.hpp>
@@ -11,28 +8,28 @@
 namespace riptide {
 
 std::vector<std::uint8_t> decompress_sequential(std::span<const std::uint8_t> gzip, bool verify) {
-    std::vector<std::uint8_t> output;
-    std::size_t offset = 0;
-
-    while (has_another_member(gzip, offset)) {
-        const GzipHeader header = parse_gzip_header(gzip, offset);
-        const BlockBoundary start{(offset + header.size) * 8, false};
-        ChunkResult member = decode_chunk_with_window(gzip, start, {}, ChunkLimits{});
-
-        const std::size_t footer_offset = (member.end_bit + 7) / 8;
-        const GzipFooter footer = read_gzip_footer(gzip, footer_offset);
-        const auto& bytes = member.data.plain;
-        if (verify) {
-            check_member_footer(footer, crc32_update(0, bytes), bytes.size());
-        }
-
-        if (output.empty()) {
-            output = std::move(member.data.plain);
-        } else {
-            output.insert(output.end(), bytes.begin(), bytes.end());
-        }
-        offset = footer_offset + kGzipFooterSize;
+    if (!has_another_member(gzip, 0)) {
+        return {};
     }
+    const GzipHeader header = parse_gzip_header(gzip, 0);
+    ChunkResult stream =
+        decode_chunk_with_window(gzip, BlockBoundary{header.size * 8, false}, {}, ChunkLimits{});
+    std::vector<std::uint8_t> output = std::move(stream.data.plain);
+
+    std::size_t member_begin = 0;
+    for (const MemberEnd& end : stream.member_ends) {
+        if (verify) {
+            const std::span<const std::uint8_t> member(output.data() + member_begin,
+                                                       end.output_offset - member_begin);
+            check_member_footer(read_gzip_footer(gzip, end.footer_offset),
+                                crc32_update(0, member), member.size());
+        }
+        member_begin = end.output_offset;
+    }
+    // The decoder followed every member that starts with the gzip magic; this only
+    // rejects trailing data that is neither a member nor zero padding.
+    static_cast<void>(
+        has_another_member(gzip, stream.member_ends.back().footer_offset + kGzipFooterSize));
     return output;
 }
 
