@@ -1,0 +1,24 @@
+[
+ {
+  "chunk_KiB": 4096,
+  "output_MB": 212.0,
+  "unresolved_bytes_MB": 22.8,
+  "runs": 7746432,
+  "avg_run_length": 2.9,
+  "runs_of_length_1_pct": 48.3,
+  "rapidgzip_MB": 285.1,
+  "m2_MB": 304.9,
+  "saving_pct": -7.0
+ },
+ {
+  "chunk_KiB": 512,
+  "output_MB": 212.0,
+  "unresolved_bytes_MB": 72.1,
+  "runs": 24833080,
+  "avg_run_length": 2.9,
+  "runs_of_length_1_pct": 55.0,
+  "rapidgzip_MB": 375.9,
+  "m2_MB": 510.0,
+  "saving_pct": -35.6
+ }
+]
