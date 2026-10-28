@@ -15,6 +15,12 @@ constexpr double kCopyCost = 0.1;
 constexpr double kStoredDensity = kCopyCost;
 /// Chunks are never made smaller than this, so block-finder overhead stays bounded.
 constexpr std::size_t kMinimumChunk = 64 * 1024;
+/// How far past a sample point to look for a dynamic header. zlib ends a block
+/// every 16 Ki symbols, at most about 70 KB of compressed data, so a compressible
+/// region has a header within this distance; an incompressible one, made of stored
+/// blocks, has none, and searching all of its sample interval bit by bit would
+/// cost more than the decoding the plan is meant to balance.
+constexpr std::size_t kHeaderSearchLimit = 128 * 1024;
 
 std::size_t chunk_count(std::size_t begin, std::size_t end, std::size_t chunk_size) {
     chunk_size = std::max<std::size_t>(chunk_size, 1);
@@ -53,7 +59,7 @@ PartitionPlan plan_work_balanced_chunks(ThreadPool& pool, std::span<const std::u
     parallel_for(pool, 0, intervals, 1, [&](std::size_t lo, std::size_t hi) {
         for (std::size_t i = lo; i < hi; ++i) {
             const std::size_t from = begin + i * sample_interval;
-            const std::size_t to = std::min(from + sample_interval, end);
+            const std::size_t to = std::min({from + sample_interval, from + kHeaderSearchLimit, end});
             if (const auto header = finder.find_dynamic(from * 8, to * 8)) {
                 if (const auto estimate = estimate_block_at(input, *header)) {
                     density[i] = estimated_cost_density(estimate->symbols_per_byte(),

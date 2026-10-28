@@ -189,6 +189,27 @@ RIPTIDE_TEST(block_finder, rarely_reports_false_positives_in_random_data) {
     CHECK(candidates < 5);
 }
 
+RIPTIDE_TEST(block_finder, finds_stored_blocks_inside_incompressible_data) {
+    // zlib stores incompressible data in stored blocks of at most 64 KiB. find()
+    // searches segment by segment, checking stored blocks before dynamic headers in
+    // each; started inside stored data it must return the next stored block.
+    const Bytes gzip = test::gzip_compress(test::random_bytes(4'000'000, 7));
+    const auto boundaries = boundaries_of(gzip);
+    CHECK(boundaries.size() > 50);
+    const BlockFinder finder(gzip);
+    for (const std::size_t at : {gzip.size() / 4, gzip.size() / 2, 3 * gzip.size() / 4}) {
+        const auto next = std::find_if(boundaries.begin(), boundaries.end(),
+                                       [&](const BlockBoundary& b) { return b.bit >= at * 8; });
+        const auto found = finder.find(at * 8, gzip.size() * 8);
+        CHECK(found.has_value());
+        CHECK(next != boundaries.end());
+        CHECK(found->stored_payload);
+        // A false positive inside the payload may come first; it is never later
+        // than the real boundary.
+        CHECK(found->bit <= next->bit);
+    }
+}
+
 RIPTIDE_TEST(expansion_estimator, predicts_block_expansion) {
     // Compare the estimate from each dynamic block's header with the expansion
     // measured by decoding that block, over data with very different statistics.
