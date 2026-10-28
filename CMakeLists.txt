@@ -15,7 +15,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 option(RIPTIDE_BUILD_TESTS "Build the test suite" OFF)
-option(RIPTIDE_BUILD_TOOLS "Build the command-line tool and benchmark driver" OFF)
+option(RIPTIDE_BUILD_TOOLS "Build the command-line tool and benchmark driver" ON)
 option(RIPTIDE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 option(RIPTIDE_SANITIZE "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 
