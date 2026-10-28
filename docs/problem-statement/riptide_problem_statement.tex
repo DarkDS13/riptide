@@ -1,0 +1,98 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage{amsmath,amssymb}
+
+\setlength{\parskip}{0pt}
+
+\begin{document}
+
+\title{Riptide: Breaking the Sequential Barrier in DEFLATE Decompression}
+
+\author{
+\begin{tabular}{@{}c@{\hspace{2.2cm}}c@{}}
+\textbf{Devansh Hiren Shah} & \textbf{Mantri Samarth Prakash}\\
+Dept. of Information Technology & Dept. of Information Technology\\
+NIT Karnataka, Surathkal --- 241IT024 & NIT Karnataka, Surathkal --- 241IT043\\[8pt]
+\textbf{Shubh Minesh Thakkar} & \textbf{Ritesh Bhagat}\\
+Dept. of Information Technology & Dept. of Information Technology\\
+NIT Karnataka, Surathkal --- 241IT076 & NIT Karnataka, Surathkal --- 241IT063
+\end{tabular}
+}
+
+\maketitle
+
+\section{Introduction}
+
+DEFLATE is the compression format behind \texttt{gzip}, ZIP, PNG, HTTP
+transfers and the default codecs of Apache Parquet and ORC. Compressing with it
+parallelises easily, since the compressor may cut the input wherever it likes.
+Decompressing a single \texttt{.gz} file does not: no practical decoder turns
+extra CPU cores into extra speed on one stream. Big-data engines can split a
+file across tasks only if a worker can begin reading from the middle. Gzip
+forbids this, so a 10\,GB \texttt{.gz} file becomes one task on one core even
+on a 500-core Spark cluster. The same ceiling appears elsewhere: genomics
+pipelines align reads at tens of gigabytes per second yet are throttled by one
+thread decompressing \texttt{.fastq.gz}. As data consumers grow more parallel,
+this gap widens with every new machine. The standard advice, to re-encode data
+into a splittable format, first requires decompressing everything sequentially,
+which is the very cost we wish to remove.
+
+Given an unmodified gzip stream and $P$ processors, we therefore aim to produce
+output bit-identical to the standard sequential decoder, in time that shrinks
+as $P$ grows, without re-encoding the file and without an index built by a
+prior sequential pass. Three obstacles stand in the way. First, the stream
+holds no directory of block positions, and each block's start is found only
+after parsing the previous one, so the split points we need are exactly what
+the sequential scan exists to compute. Second, Huffman symbols vary in length
+and are packed without byte alignment, so a worker starting at a wrong bit
+position does not fail loudly but silently emits wrong output. Third, a match
+instructs the decoder to copy bytes from up to 32\,KB earlier in the output, so
+one chunk can genuinely need data another has not yet produced.
+
+Existing tools avoid these obstacles rather than solve them. \texttt{pigz}
+overlaps only file I/O when decompressing, leaving the decode loop
+single-threaded, while Intel's \texttt{igzip} uses SIMD to make one thread
+faster without scaling with core count. Chunked formats such as BGZF and
+index-based tools such as \texttt{gztool} work only if the file is rewritten in
+a different layout or scanned sequentially first, so neither helps a first-time
+read of an ordinary \texttt{.gz}. \texttt{rapidgzip} is the strongest prior
+result, genuinely decoding standard gzip in parallel, but it is CPU-only and
+its recovery pass inflates memory, and NVIDIA's nvCOMP reaches GPU speeds only
+inside its own chunked container. The gap is that no decoder handles
+unmodified, unindexed gzip with one strategy running on both multicore CPUs and
+GPUs.
+
+Such a decoder would accelerate data that already exists, without migration or
+re-encoding: archived genomic reads, Spark and Trino scans over
+gzip-compressed Parquet, queries over gzipped logs, and GPU data loading, where
+decoding on the device also avoids sending the larger uncompressed form across
+PCIe. The beneficiaries are bioinformatics researchers, data-engineering teams,
+and machine-learning infrastructure operators.
+
+Our approach rests on the observation that the dependence is weaker than it
+appears. Reading compressed bits into symbols needs no previously decoded byte;
+only executing a copy does. Riptide thus parses in parallel and records any
+copy reaching before its own chunk as a placeholder, resolving all placeholders
+in a second parallel pass. Because a match looks back at most 32\,KB, only the
+first 32\,KB of each chunk can depend on another, so with large chunks well
+over 99\% of the work is dependence-free. To our knowledge this is the first
+design combining index-free discovery of block boundaries, a validation step
+that proves rather than assumes a genuine symbol boundary, and
+placeholder-based deferred copying, in one formulation intended for both CPUs
+and GPUs. The checksum already stored in every gzip file then verifies the
+entire speculative result at no extra cost. Our underlying claim is that
+DEFLATE is sequential because of how decoders are written, not because the
+format demands it.
+
+We will evaluate correctness by requiring byte-for-byte agreement with
+\texttt{zlib} across all block types, unusual matches and corrupted files.
+Performance will be measured as speedup against thread count and as throughput
+compared with \texttt{zlib}, \texttt{igzip}, \texttt{rapidgzip} and nvCOMP,
+alongside peak memory and sensitivity to compression ratio.
+
+We expect to contribute algorithms for boundary discovery, verified entry
+points and deferred copy resolution; Riptide, a decompressor with CPU and GPU
+backends for unmodified \texttt{.gz} files; and measurements of how much
+parallelism real gzip files contain.
+
+\end{document}
