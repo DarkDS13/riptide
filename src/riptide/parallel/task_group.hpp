@@ -37,22 +37,28 @@ public:
     void run(std::function<void()> work) {
         pending_.fetch_add(1);
         pool_.submit([this, work = std::move(work)] {
+            std::exception_ptr error;
             try {
                 work();
             } catch (...) {
-                const std::lock_guard lock(mutex_);
-                if (!error_) {
-                    error_ = std::current_exception();
-                }
+                error = std::current_exception();
+            }
+            // The counter is decremented while holding the mutex, and this is the
+            // task's last access to the group. wait() takes the same mutex before it
+            // returns, so the group cannot be destroyed while a finishing task still
+            // uses its mutex or condition variable.
+            const std::lock_guard lock(mutex_);
+            if (error && !error_) {
+                error_ = error;
             }
             if (pending_.fetch_sub(1) == 1) {
-                const std::lock_guard lock(mutex_);
                 done_.notify_all();
             }
         });
     }
 
     void wait() {
+        // Help with queued work while tasks are outstanding, then sleep.
         while (pending_.load() > 0) {
             if (pool_.run_pending_task()) {
                 continue;
@@ -60,6 +66,7 @@ public:
             std::unique_lock lock(mutex_);
             done_.wait(lock, [this] { return pending_.load() == 0; });
         }
+        // Synchronise with the last finishing task (see run()).
         const std::lock_guard lock(mutex_);
         if (error_) {
             std::rethrow_exception(std::exchange(error_, nullptr));

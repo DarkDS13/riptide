@@ -18,6 +18,7 @@ option(RIPTIDE_BUILD_TESTS "Build the test suite" ON)
 option(RIPTIDE_BUILD_TOOLS "Build the command-line tool and benchmark driver" ON)
 option(RIPTIDE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 option(RIPTIDE_SANITIZE "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+option(RIPTIDE_SANITIZE_THREAD "Build with ThreadSanitizer" OFF)
 
 find_package(Threads REQUIRED)
 # zlib is only used as an independent reference: by the tests to produce and
@@ -53,6 +54,10 @@ target_link_libraries(riptide PUBLIC Threads::Threads)
 if(RIPTIDE_SANITIZE)
     target_compile_options(riptide PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
     target_link_options(riptide PUBLIC -fsanitize=address,undefined)
+endif()
+if(RIPTIDE_SANITIZE_THREAD)
+    target_compile_options(riptide PUBLIC -fsanitize=thread -fno-omit-frame-pointer)
+    target_link_options(riptide PUBLIC -fsanitize=thread)
 endif()
 
 if(RIPTIDE_BUILD_TOOLS)
