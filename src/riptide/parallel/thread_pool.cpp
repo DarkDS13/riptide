@@ -1,6 +1,7 @@
 #include <riptide/parallel/thread_pool.hpp>
 
 #include <algorithm>
+#include <chrono>
 
 namespace riptide {
 namespace {
@@ -11,7 +12,8 @@ thread_local std::size_t current_index = 0;
 
 }  // namespace
 
-ThreadPool::ThreadPool(std::size_t thread_count) {
+ThreadPool::ThreadPool(std::size_t thread_count)
+    : busy_nanoseconds_(std::max<std::size_t>(thread_count, 1)) {
     thread_count = std::max<std::size_t>(thread_count, 1);
     queues_.reserve(thread_count);
     for (std::size_t i = 0; i < thread_count; ++i) {
@@ -69,6 +71,15 @@ ThreadPoolStatistics ThreadPool::statistics() const noexcept {
     return {executed_.load(std::memory_order_relaxed), stolen_.load(std::memory_order_relaxed)};
 }
 
+std::vector<double> ThreadPool::busy_seconds() const {
+    std::vector<double> seconds;
+    seconds.reserve(busy_nanoseconds_.size());
+    for (const auto& nanoseconds : busy_nanoseconds_) {
+        seconds.push_back(static_cast<double>(nanoseconds.load(std::memory_order_relaxed)) * 1e-9);
+    }
+    return seconds;
+}
+
 std::size_t ThreadPool::hardware_threads() noexcept {
     return std::max<std::size_t>(std::thread::hardware_concurrency(), 1);
 }
@@ -83,7 +94,13 @@ void ThreadPool::worker_loop(std::size_t index) {
             // Counted when started: a group's wait() may return before this worker
             // gets back here, and the statistics must already include the task then.
             executed_.fetch_add(1, std::memory_order_relaxed);
+            const auto start = std::chrono::steady_clock::now();
             task();
+            const auto elapsed = std::chrono::steady_clock::now() - start;
+            busy_nanoseconds_[index].fetch_add(
+                static_cast<std::uint64_t>(
+                    std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count()),
+                std::memory_order_relaxed);
             continue;
         }
         std::unique_lock lock(sleep_mutex_);
