@@ -4,6 +4,7 @@
 #include <zlib.h>
 
 #include <algorithm>
+#include <cmath>
 #include <random>
 #include <tuple>
 
@@ -189,16 +190,32 @@ RIPTIDE_TEST(block_finder, rarely_reports_false_positives_in_random_data) {
 }
 
 RIPTIDE_TEST(expansion_estimator, predicts_block_expansion) {
-    for (const auto& [data, low, high] :
-         {std::tuple{test::text_like(1'000'000, 5), 2.0, 5.0},
-          std::tuple{test::repetitive(1'000'000, 6), 20.0, 1000.0}}) {
+    // Compare the estimate from each dynamic block's header with the expansion
+    // measured by decoding that block, over data with very different statistics.
+    std::size_t blocks = 0;
+    std::size_t within_25_percent = 0;
+    for (const Bytes& data : {test::text_like(6'000'000, 5), test::mixed(8'000'000, 6)}) {
         const Bytes gzip = test::gzip_compress(data);
         const GzipHeader header = parse_gzip_header(gzip, 0);
-        const auto estimate = estimate_block_at(gzip, header.size * 8);
-        CHECK(estimate.has_value());
-        if (estimate) {
-            CHECK(estimate->expansion_ratio() > low);
-            CHECK(estimate->expansion_ratio() < high);
+        std::vector<BlockBoundary> starts{BlockBoundary{header.size * 8, false}};
+        const auto rest = boundaries_of(gzip);
+        starts.insert(starts.end(), rest.begin(), rest.end());
+        for (const BlockBoundary& start : starts) {
+            const auto estimate = estimate_block_at(gzip, start.bit);
+            if (start.stored_payload || !estimate) {
+                continue;
+            }
+            ChunkLimits one_block;
+            one_block.stop_bit = start.bit + 1;
+            const ChunkResult block = decode_chunk_with_markers(gzip, start, one_block);
+            const double measured = static_cast<double>(block.data.size()) /
+                                    (static_cast<double>(block.end_bit - start.bit) / 8.0);
+            ++blocks;
+            if (std::abs(estimate->expansion_ratio() - measured) <= 0.25 * measured) {
+                ++within_25_percent;
+            }
         }
     }
+    CHECK(blocks > 20);
+    CHECK(within_25_percent * 10 >= blocks * 9);  // at least 90% of blocks
 }

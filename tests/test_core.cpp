@@ -50,8 +50,9 @@ RIPTIDE_TEST(huffman, decodes_canonical_code) {
     const std::array<std::uint8_t, 4> lengths = {2, 1, 3, 3};
     HuffmanDecoder decoder;
     CHECK(decoder.build(lengths, HuffmanDecoder::Completeness::kRequired));
-    // Codes are sent MSB first, so the stream B, A, D, C is 0 01 111 011 (LSB-first bytes).
-    const std::array<std::uint8_t, 2> data = {0b1111'0100, 0b0000'0001};
+    // Codes are sent MSB first, so the stream B, A, D, C is the bit sequence
+    // 0, 1 0, 1 1 1, 1 1 0, packed into bytes starting at the least significant bit.
+    const std::array<std::uint8_t, 2> data = {0b1111'1010, 0b0000'0000};
     BitReader reader(data);
     CHECK_EQ(decoder.decode(reader), 1);
     CHECK_EQ(decoder.decode(reader), 0);
