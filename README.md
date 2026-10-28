@@ -17,7 +17,7 @@ DEFLATE, the format inside gzip, has two dependencies that make decompression se
 
 ## Our contributions
 
-- **M3 (primary): window resolution by parallel prefix scan.** Each chunk's final window is a map from the window before it. These maps compose associatively, so the chain is a prefix scan. We implemented Hillis–Steele, Blelloch and a blocked scan (default), replacing N − 1 dependent steps with P + 2 phases.
+- **M3 (primary): window resolution by parallel prefix scan.** Each chunk's final window is a map from the window before it. These maps compose associatively, so the chain is a prefix scan. We implemented Hillis–Steele, Blelloch and a blocked scan (default), which shortens the longest chain of dependent compositions from N − 1 to about 2N/P + P.
 - **M1: split-on-overflow.** A chunk that exceeds its output budget is split across idle workers instead of being finished on one thread. We also evaluated work-balanced chunking from Huffman-header estimates; it does not pay off (see below).
 
 Design details are in [docs/design.md](docs/design.md), including the concurrency and performance problems we had to fix along the way.

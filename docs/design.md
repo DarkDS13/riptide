@@ -114,11 +114,16 @@ and any parallel scan algorithm applies (`parallel/prefix_scan.hpp`,
 |---|---|---|---|
 | `serial` | N − 1 | N − 1 | the base paper's propagation |
 | `hillis-steele` | ⌈log₂ N⌉ | ≈ N log₂ N | every element updated each round |
-| `blelloch` | 2⌈log₂ N⌉ | ≈ 2N | work-efficient up- and down-sweep |
-| `blocked` | P + 2 phases | ≈ 2N | compose each of P blocks in parallel, resolve P block windows in order, then expand each block in parallel |
+| `blelloch` | 2⌈log₂ N⌉ | ≈ 4N | work-efficient up- and down-sweep, then every window applied |
+| `blocked` | 2N/P + P, in 3 phases | ≈ 2N | compose each of P blocks in parallel, resolve P block windows in order, then expand each block in parallel |
 
-The blocked scan is the default: with P workers it does about twice the sequential
-work but only P dependent steps, and every parallel phase works on contiguous chunks.
+On P cores a scan takes roughly work / P plus its span. Measured on 5 205 chunks
+with P = 10: the serial chain performs 5 204 dependent steps; Hillis–Steele needs
+only 14 rounds but 59 461 compositions, about 5 900 per core; Blelloch 28 rounds and
+21 586 compositions (its down-sweep and final application each touch every element);
+the blocked scan 10 417 compositions with a longest dependent chain of 1 051. The
+blocked scan is the default: least work per core, three synchronisation points
+instead of one per round, and every phase works on contiguous chunks.
 A composition is a 32 KiB gather and is memory-bound, so the scan only pays off when
 there are many chunks (small chunks or very large files); with 4 MiB chunks on a
 200 MB file the whole step takes well under a millisecond either way. The evaluation
