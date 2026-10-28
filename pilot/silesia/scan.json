@@ -1,0 +1,44 @@
+[
+ {
+  "chunk_KiB": 4096,
+  "chunks": 17,
+  "mean_chunk_out_MiB": 11.89,
+  "sequential_steps": 16,
+  "scan_rounds": 5,
+  "scan_equals_sequential": true,
+  "bit_identical_to_zlib": true,
+  "windows_with_markers_pct": 18.8,
+  "window_unresolved_mean_pct": 4.0,
+  "window_unresolved_max_pct": 33.6,
+  "chunk_output_markers_mean_pct": 11.17,
+  "chunk_16bit_region_mean_pct": 38.7,
+  "serial_share_of_resolution_pct": 0.247,
+  "amdahl_bound_resolution_phase_sequential_chain": {
+   "16": 15.4,
+   "64": 55.4,
+   "128": 97.4
+  },
+  "python_decode_seconds": 22.2
+ },
+ {
+  "chunk_KiB": 512,
+  "chunks": 131,
+  "mean_chunk_out_MiB": 1.54,
+  "sequential_steps": 130,
+  "scan_rounds": 8,
+  "scan_equals_sequential": true,
+  "bit_identical_to_zlib": true,
+  "windows_with_markers_pct": 67.7,
+  "window_unresolved_mean_pct": 17.1,
+  "window_unresolved_max_pct": 81.1,
+  "chunk_output_markers_mean_pct": 27.1,
+  "chunk_16bit_region_mean_pct": 78.1,
+  "serial_share_of_resolution_pct": 2.01,
+  "amdahl_bound_resolution_phase_sequential_chain": {
+   "16": 12.3,
+   "64": 28.2,
+   "128": 36.0
+  },
+  "python_decode_seconds": 22.4
+ }
+]
