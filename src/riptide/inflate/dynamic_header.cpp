@@ -7,7 +7,8 @@
 
 namespace riptide {
 
-bool read_dynamic_code_lengths(BitReader& reader, DynamicCodeLengths& lengths) {
+bool read_dynamic_code_lengths(BitReader& reader, DynamicCodeLengths& lengths,
+                               HuffmanDecoder& code_length_decoder) {
     lengths.literal_length_count = reader.read(5) + 257;
     lengths.distance_count = reader.read(5) + 1;
     const unsigned code_length_count = reader.read(4) + 4;
@@ -20,7 +21,6 @@ bool read_dynamic_code_lengths(BitReader& reader, DynamicCodeLengths& lengths) {
     for (unsigned i = 0; i < code_length_count; ++i) {
         code_length_lengths[kCodeLengthOrder[i]] = static_cast<std::uint8_t>(reader.read(3));
     }
-    HuffmanDecoder code_length_decoder;
     if (!code_length_decoder.build(code_length_lengths, HuffmanDecoder::Completeness::kRequired)) {
         return false;
     }

@@ -70,7 +70,8 @@ std::optional<ExpansionEstimate> estimate_block_at(std::span<const std::uint8_t>
         return std::nullopt;
     }
     DynamicCodeLengths lengths;
-    if (!read_dynamic_code_lengths(reader, lengths)) {
+    HuffmanDecoder code_length_decoder;
+    if (!read_dynamic_code_lengths(reader, lengths, code_length_decoder)) {
         return std::nullopt;
     }
     return estimate_expansion(lengths);

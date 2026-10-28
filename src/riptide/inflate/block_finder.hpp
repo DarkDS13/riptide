@@ -5,7 +5,9 @@
 #include <optional>
 #include <span>
 
+#include <riptide/huffman/huffman_decoder.hpp>
 #include <riptide/inflate/chunk_decoder.hpp>
+#include <riptide/inflate/dynamic_header.hpp>
 
 namespace riptide {
 
@@ -36,7 +38,15 @@ public:
                                                          std::size_t end_bit) const;
 
 private:
-    [[nodiscard]] bool is_dynamic_header(std::size_t bit) const;
+    /// Decoders and lengths reused across all candidates of one search.
+    struct Scratch {
+        DynamicCodeLengths lengths;
+        HuffmanDecoder code_length;
+        HuffmanDecoder literal_length;
+        HuffmanDecoder distance;
+    };
+
+    [[nodiscard]] bool is_dynamic_header(std::size_t bit, Scratch& scratch) const;
 
     std::span<const std::uint8_t> input_;
 };

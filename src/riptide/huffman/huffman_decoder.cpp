@@ -32,15 +32,16 @@ bool HuffmanDecoder::build(std::span<const std::uint8_t> code_lengths, Completen
         }
     }
 
-    root_.fill(Entry{});
-    subtables_.clear();
-
+    // Validate before touching the tables: the block finder calls build() for many
+    // candidate offsets, and almost all of them are rejected here.
     if (used_symbols == 0) {
+        root_.fill(Entry{});
+        subtables_.clear();
         return rule == Completeness::kAllowEmptyOrSingle;
     }
 
-    // Check the Kraft inequality: an over-subscribed code is never valid, and an
-    // incomplete one only in the single-code case that zlib also accepts.
+    // Kraft inequality: an over-subscribed code is never valid, and an incomplete
+    // one only in the single-code case that zlib also accepts.
     int unused_codes = 1;
     for (unsigned length = 1; length <= kMaxCodeLength; ++length) {
         unused_codes = unused_codes * 2 - static_cast<int>(count[length]);
@@ -51,6 +52,9 @@ bool HuffmanDecoder::build(std::span<const std::uint8_t> code_lengths, Completen
     if (unused_codes > 0 && (rule == Completeness::kRequired || longest != 1)) {
         return false;
     }
+
+    root_.fill(Entry{});
+    subtables_.clear();
 
     // First canonical code of each length.
     std::array<std::uint32_t, kMaxCodeLength + 2> next_code{};
