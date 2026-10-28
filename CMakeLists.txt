@@ -38,6 +38,7 @@ add_library(riptide STATIC
     src/riptide/inflate/dynamic_header.cpp
     src/riptide/inflate/expansion_estimator.cpp
     src/riptide/io/mapped_file.cpp
+    src/riptide/parallel/thread_pool.cpp
     src/riptide/pipeline/sequential_decompressor.cpp
 )
 target_include_directories(riptide PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -55,9 +56,6 @@ if(RIPTIDE_BUILD_TOOLS)
     target_compile_options(riptide_cli PRIVATE ${RIPTIDE_WARNINGS})
     target_link_libraries(riptide_cli PRIVATE riptide)
 
-    add_executable(riptide_bench tools/riptide_bench.cpp tools/cli_options.cpp)
-    target_compile_options(riptide_bench PRIVATE ${RIPTIDE_WARNINGS})
-    target_link_libraries(riptide_bench PRIVATE riptide ZLIB::ZLIB)
 endif()
 
 if(RIPTIDE_BUILD_TESTS)
