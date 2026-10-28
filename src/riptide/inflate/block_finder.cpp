@@ -29,16 +29,26 @@ constexpr bool passes_header_prefilter(std::uint64_t bits) noexcept {
     return non_final_dynamic && hlit < 30 && hdist < 30;
 }
 
+/// Length of one search segment of find(): 64 KiB of input.
+constexpr std::size_t kSegmentBits = 64 * 1024 * 8;
+
 }  // namespace
 
 std::optional<BlockBoundary> BlockFinder::find(std::size_t begin_bit, std::size_t end_bit) const {
-    const auto dynamic = find_dynamic(begin_bit, end_bit);
-    const std::size_t stored_limit = dynamic ? *dynamic : end_bit;
-    if (const auto stored = find_stored(begin_bit, stored_limit)) {
-        return BlockBoundary{*stored, true};
-    }
-    if (dynamic) {
-        return BlockBoundary{*dynamic, false};
+    // Search in segments, so that the cost is proportional to the distance to the
+    // first candidate of either kind. Searching the whole range for dynamic headers
+    // first scans every bit of incompressible regions, which hold only stored
+    // blocks; searching it for stored blocks first scans every byte of compressible
+    // regions, which hold none.
+    for (std::size_t from = begin_bit; from < end_bit; from += kSegmentBits) {
+        const std::size_t to = std::min(from + kSegmentBits, end_bit);
+        const auto stored = find_stored(from, to);
+        if (const auto dynamic = find_dynamic(from, stored ? *stored : to)) {
+            return BlockBoundary{*dynamic, false};
+        }
+        if (stored) {
+            return BlockBoundary{*stored, true};
+        }
     }
     return std::nullopt;
 }
