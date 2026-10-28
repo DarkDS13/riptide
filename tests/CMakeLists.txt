@@ -3,6 +3,8 @@ add_executable(riptide_tests
     test_data.cpp
     test_core.cpp
     test_decoder.cpp
+    test_parallel.cpp
+    test_pipeline.cpp
 )
 target_compile_options(riptide_tests PRIVATE ${RIPTIDE_WARNINGS})
 target_link_libraries(riptide_tests PRIVATE riptide ZLIB::ZLIB)
