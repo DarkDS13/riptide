@@ -40,6 +40,8 @@ add_library(riptide STATIC
     src/riptide/io/mapped_file.cpp
     src/riptide/parallel/thread_pool.cpp
     src/riptide/pipeline/sequential_decompressor.cpp
+    src/riptide/window/window.cpp
+    src/riptide/window/window_resolver.cpp
 )
 target_include_directories(riptide PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_options(riptide PRIVATE ${RIPTIDE_WARNINGS})
