@@ -7,14 +7,14 @@
 
 namespace riptide {
 
-std::vector<std::uint8_t> decompress_sequential(std::span<const std::uint8_t> gzip, bool verify) {
+Buffer<std::uint8_t> decompress_sequential(std::span<const std::uint8_t> gzip, bool verify) {
     if (!has_another_member(gzip, 0)) {
         return {};
     }
     const GzipHeader header = parse_gzip_header(gzip, 0);
     ChunkResult stream =
         decode_chunk_with_window(gzip, BlockBoundary{header.size * 8, false}, {}, ChunkLimits{});
-    std::vector<std::uint8_t> output = std::move(stream.data.plain);
+    Buffer<std::uint8_t> output = std::move(stream.data.plain);
 
     std::size_t member_begin = 0;
     for (const MemberEnd& end : stream.member_ends) {

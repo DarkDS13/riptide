@@ -1,4 +1,4 @@
-// Tests of the building blocks: bit reader, Huffman decoder, CRC-32, gzip parsing.
+// Tests of the building blocks: buffer, bit reader, Huffman decoder, CRC-32, gzip parsing.
 
 #include <zlib.h>
 
@@ -6,6 +6,7 @@
 #include <random>
 
 #include <riptide/common/bit_reader.hpp>
+#include <riptide/common/buffer.hpp>
 #include <riptide/common/error.hpp>
 #include <riptide/gzip/crc32.hpp>
 #include <riptide/gzip/gzip_format.hpp>
@@ -16,6 +17,37 @@
 
 using namespace riptide;
 using riptide::test::Bytes;
+
+RIPTIDE_TEST(buffer, keeps_contents_when_resized) {
+    Buffer<std::uint16_t> buffer(1000);
+    for (std::size_t i = 0; i < buffer.size(); ++i) {
+        buffer[i] = static_cast<std::uint16_t>(i * 7);
+    }
+    buffer.resize(5'000'000);  // large enough to be remapped rather than copied
+    buffer.resize(500);
+    CHECK_EQ(buffer.size(), 500U);
+    bool intact = true;
+    for (std::size_t i = 0; i < buffer.size(); ++i) {
+        intact = intact && buffer[i] == static_cast<std::uint16_t>(i * 7);
+    }
+    CHECK(intact);
+    buffer.resize(0);
+    CHECK(buffer.empty());
+    CHECK(buffer.data() == nullptr);
+}
+
+RIPTIDE_TEST(buffer, move_transfers_ownership) {
+    Buffer<std::uint8_t> source(16);
+    source[0] = 42;
+    const std::uint8_t* const storage = source.data();
+    Buffer<std::uint8_t> target(std::move(source));
+    CHECK(target.data() == storage);
+    CHECK_EQ(target[0], 42);
+    CHECK(source.empty());  // a moved-from buffer is empty
+    source = std::move(target);
+    CHECK(source.data() == storage);
+    CHECK(target.empty());
+}
 
 RIPTIDE_TEST(bit_reader, reads_lsb_first) {
     const std::array<std::uint8_t, 3> data = {0b1011'0101, 0b0000'1111, 0xFF};

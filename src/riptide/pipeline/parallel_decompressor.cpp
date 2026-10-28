@@ -337,11 +337,25 @@ private:
             }
         }
 
+        // Remember where every gzip member ends before the chunks are released.
+        for (std::size_t k = 0; k < chain_.size(); ++k) {
+            for (const MemberEnd& end : chain_[k]->member_ends) {
+                member_ends_.push_back({offsets[k] + end.output_offset, end.footer_offset});
+            }
+        }
+
+        // A chunk is released as soon as its last piece is in the output, so the
+        // decoded chunks and the output buffer are never both fully resident.
+        std::vector<std::atomic<std::size_t>> unfinished(chain_.size());
+        for (const Piece& piece : pieces) {
+            unfinished[piece.chunk].fetch_add(1, std::memory_order_relaxed);
+        }
+
         std::uint8_t* const output = result.buffer.get();
         parallel_for(pool_, 0, pieces.size(), 1, [&](std::size_t lo, std::size_t hi) {
             for (std::size_t p = lo; p < hi; ++p) {
                 const Piece& piece = pieces[p];
-                const ChunkData& data = chain_[piece.chunk]->data;
+                ChunkData& data = chain_[piece.chunk]->data;
                 const std::size_t length = piece.to - piece.from;
                 if (piece.marked) {
                     // Chunk 0 is decoded with a known window and never holds markers.
@@ -352,15 +366,11 @@ private:
                     std::memcpy(output + offsets[piece.chunk] + data.marked_size() + piece.from,
                                 data.plain.data() + data.plain_prefix + piece.from, length);
                 }
+                if (unfinished[piece.chunk].fetch_sub(1, std::memory_order_acq_rel) == 1) {
+                    data = ChunkData{};
+                }
             }
         });
-
-        // Remember where every gzip member ends before the chunks are released.
-        for (std::size_t k = 0; k < chain_.size(); ++k) {
-            for (const MemberEnd& end : chain_[k]->member_ends) {
-                member_ends_.push_back({offsets[k] + end.output_offset, end.footer_offset});
-            }
-        }
         chain_.clear();
         return result;
     }

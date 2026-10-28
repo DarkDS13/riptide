@@ -123,6 +123,12 @@ BenchArguments parse_arguments(int argc, char** argv) {
 /// Decompresses every member with zlib; the reference output and the zlib baseline.
 std::vector<std::uint8_t> zlib_decompress(std::span<const std::uint8_t> input) {
     std::vector<std::uint8_t> output;
+    // The last member's ISIZE field is the exact size of a single-member file, so
+    // zlib is not charged for growing its output vector.
+    if (input.size() >= 18) {
+        const std::uint8_t* isize = input.data() + input.size() - 4;
+        output.reserve(isize[0] | isize[1] << 8 | isize[2] << 16 | std::size_t{isize[3]} << 24);
+    }
     std::vector<std::uint8_t> buffer(1 << 20);
     z_stream stream{};
     if (inflateInit2(&stream, 16 + MAX_WBITS) != Z_OK) {
@@ -186,6 +192,7 @@ void write_row(std::ostream& out, const Row& row) {
 }
 
 std::span<const std::uint8_t> view_of(const std::vector<std::uint8_t>& data) { return data; }
+std::span<const std::uint8_t> view_of(const riptide::Buffer<std::uint8_t>& data) { return data; }
 std::span<const std::uint8_t> view_of(const riptide::DecompressionResult& result) { return result.data(); }
 
 bool same(std::span<const std::uint8_t> a, const std::vector<std::uint8_t>& b) {

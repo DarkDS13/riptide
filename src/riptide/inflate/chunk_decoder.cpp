@@ -181,7 +181,7 @@ private:
 
     template <typename Symbol>
     void decode_symbols(const HuffmanDecoder& literal_length, const HuffmanDecoder& distance,
-                        std::vector<Symbol>& buffer, std::size_t& size) {
+                        Buffer<Symbol>& buffer, std::size_t& size) {
         constexpr bool kTracksMarkers = std::is_same_v<Symbol, std::uint16_t>;
         Symbol* out = buffer.data();
         std::size_t symbols_since_check = 0;
@@ -279,12 +279,12 @@ private:
     }
 
     template <typename Symbol>
-    static void append(std::span<const std::uint8_t> bytes, std::vector<Symbol>& buffer,
+    static void append(std::span<const std::uint8_t> bytes, Buffer<Symbol>& buffer,
                        std::size_t& size) {
         if (buffer.size() - size < bytes.size()) {
             buffer.resize(std::max(buffer.size() * 2, size + bytes.size()));
         }
-        std::copy(bytes.begin(), bytes.end(), buffer.begin() + static_cast<std::ptrdiff_t>(size));
+        std::copy(bytes.begin(), bytes.end(), buffer.begin() + size);
         size += bytes.size();
     }
 

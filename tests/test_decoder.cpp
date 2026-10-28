@@ -71,8 +71,8 @@ std::vector<BlockBoundary> boundaries_of(const Bytes& gzip) {
 RIPTIDE_TEST(decoder, sequential_matches_zlib) {
     for (const auto& [name, gzip] : corpus()) {
         const Bytes expected = test::zlib_decompress(gzip);
-        const Bytes actual = decompress_sequential(gzip);
-        if (actual != expected) {
+        const auto actual = decompress_sequential(gzip);
+        if (!std::equal(actual.begin(), actual.end(), expected.begin(), expected.end())) {
             test::report_failure(__FILE__, __LINE__, "sequential output differs for " + name);
         }
     }

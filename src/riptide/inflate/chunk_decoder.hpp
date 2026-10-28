@@ -6,6 +6,7 @@
 #include <span>
 #include <vector>
 
+#include <riptide/common/buffer.hpp>
 #include <riptide/common/deflate_constants.hpp>
 
 namespace riptide {
@@ -65,8 +66,8 @@ struct MemberEnd {
 /// decoding continues in 8-bit form in `plain`, whose first `plain_prefix` bytes
 /// repeat the last 32 KiB of `marked` so that back-references still resolve.
 struct ChunkData {
-    std::vector<std::uint16_t> marked;
-    std::vector<std::uint8_t> plain;
+    Buffer<std::uint16_t> marked;
+    Buffer<std::uint8_t> plain;
     std::size_t plain_prefix = 0;
     bool uses_markers = false;
 
