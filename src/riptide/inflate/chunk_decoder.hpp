@@ -33,12 +33,26 @@ struct ChunkLimits {
     std::size_t stop_bit = std::numeric_limits<std::size_t>::max();
     /// Stop at the first such block once this many bytes have been produced.
     std::size_t output_budget = std::numeric_limits<std::size_t>::max();
+    /// Fail with DecodeError once this many bytes have been produced, even inside a
+    /// block. Set for speculative decodes, where a false-positive start could
+    /// otherwise expand garbage without bound.
+    std::size_t output_limit = std::numeric_limits<std::size_t>::max();
+    /// After the final block of a gzip member, continue with the next member if one
+    /// follows. Members are independent DEFLATE streams, so no back-reference crosses
+    /// from one into the next.
+    bool follow_gzip_members = true;
 };
 
 enum class StopReason {
     kBoundary,      ///< Reached `stop_bit`.
     kOutputBudget,  ///< Produced at least `output_budget` bytes (split-on-overflow).
-    kStreamEnd,     ///< Decoded the final block of the DEFLATE stream.
+    kStreamEnd,     ///< Decoded the final block of the last gzip member (or raw stream).
+};
+
+/// End of a gzip member inside a chunk.
+struct MemberEnd {
+    std::size_t output_offset = 0;  ///< Bytes of chunk output that belong to the member.
+    std::size_t footer_offset = 0;  ///< Byte offset of the member's 8-byte footer.
 };
 
 /// Output of one chunk.
@@ -72,6 +86,7 @@ struct ChunkResult {
     std::size_t end_bit = 0;     ///< Bit offset where decoding stopped.
     StopReason reason = StopReason::kStreamEnd;
     std::size_t block_count = 0;
+    std::vector<MemberEnd> member_ends;  ///< Members that ended inside this chunk, in order.
     ChunkData data;
 };
 

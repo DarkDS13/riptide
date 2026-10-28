@@ -2,10 +2,12 @@
 
 #include <algorithm>
 #include <cstring>
+#include <limits>
 #include <type_traits>
 
 #include <riptide/common/bit_reader.hpp>
 #include <riptide/common/error.hpp>
+#include <riptide/gzip/gzip_format.hpp>
 #include <riptide/huffman/huffman_decoder.hpp>
 #include <riptide/inflate/dynamic_header.hpp>
 
@@ -47,6 +49,7 @@ public:
     }
 
     ChunkResult run(BlockBoundary start, const ChunkLimits& limits) {
+        output_limit_ = limits.output_limit;
         ChunkResult result;
         result.start = start;
 
@@ -105,13 +108,29 @@ public:
             }
             finish_block(result);
 
-            if (is_final) {
+            if (is_final && !continue_with_next_member(result, limits)) {
                 return finish(std::move(result), StopReason::kStreamEnd, reader_.tell(), {});
             }
         }
     }
 
 private:
+    /// Records the end of a gzip member and, if another member follows its footer,
+    /// positions the reader at that member's first block.
+    bool continue_with_next_member(ChunkResult& result, const ChunkLimits& limits) {
+        reader_.align_to_byte();
+        const std::size_t footer_offset = reader_.tell() / 8;
+        result.member_ends.push_back(MemberEnd{output_size(), footer_offset});
+
+        const std::size_t next_member = footer_offset + kGzipFooterSize;
+        if (!limits.follow_gzip_members || !looks_like_gzip(input_, next_member)) {
+            return false;
+        }
+        const GzipHeader header = parse_gzip_header(input_, next_member);
+        reader_.seek((next_member + header.size) * 8);
+        return true;
+    }
+
     [[nodiscard]] std::size_t output_size() const noexcept {
         const std::size_t marked = data_.uses_markers ? marked_size_ - kWindowSize : 0;
         const std::size_t plain = plain_size_ - data_.plain_prefix;
@@ -137,6 +156,7 @@ private:
 
         for (;;) {
             if (buffer.size() - size <= kMaxMatchLength) {
+                check_output_limit();
                 buffer.resize(std::max(buffer.size() * 2, size + kInitialCapacity));
                 out = buffer.data();
             }
@@ -209,12 +229,19 @@ private:
             throw DecodeError("truncated stored block");
         }
         const auto payload = input_.subspan(byte_offset, length);
+        check_output_limit();
         if (marked_mode_) {
             append(payload, data_.marked, marked_size_);
         } else {
             append(payload, data_.plain, plain_size_);
         }
         reader_.seek((byte_offset + length) * 8);
+    }
+
+    void check_output_limit() const {
+        if (output_size() > output_limit_) {
+            throw DecodeError("chunk output exceeds the limit for speculative decoding");
+        }
     }
 
     template <typename Symbol>
@@ -264,6 +291,7 @@ private:
     std::size_t marked_size_ = 0;
     std::size_t plain_size_ = 0;
     std::size_t last_marker_end_ = 0;  ///< One past the last position that may hold a marker.
+    std::size_t output_limit_ = std::numeric_limits<std::size_t>::max();
 
     DynamicCodeLengths lengths_;
     HuffmanDecoder literal_length_;
