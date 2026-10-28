@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Silesia corpus and generated gzip files (rebuilt by scripts/get_silesia.sh)
+pilot/silesia/silesia.zip
+pilot/silesia/files/
+pilot/silesia/gz/
+pilot/silesia/*.tar.gz
+
+# OS / editor
+.DS_Store
+*.swp
+
+# LaTeX build output
+*.aux
+*.log
+*.out
+*.pdf
