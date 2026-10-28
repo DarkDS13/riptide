@@ -39,6 +39,7 @@ add_library(riptide STATIC
     src/riptide/inflate/expansion_estimator.cpp
     src/riptide/io/mapped_file.cpp
     src/riptide/parallel/thread_pool.cpp
+    src/riptide/pipeline/parallel_decompressor.cpp
     src/riptide/pipeline/partitioner.cpp
     src/riptide/pipeline/sequential_decompressor.cpp
     src/riptide/pipeline/statistics.cpp
