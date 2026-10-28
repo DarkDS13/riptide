@@ -37,6 +37,8 @@ add_library(riptide STATIC
     src/riptide/inflate/chunk_decoder.cpp
     src/riptide/inflate/dynamic_header.cpp
     src/riptide/inflate/expansion_estimator.cpp
+    src/riptide/io/mapped_file.cpp
+    src/riptide/pipeline/sequential_decompressor.cpp
 )
 target_include_directories(riptide PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_options(riptide PRIVATE ${RIPTIDE_WARNINGS})
