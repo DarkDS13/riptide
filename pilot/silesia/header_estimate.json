@@ -1,0 +1,11 @@
+{
+ "blocks_checked": 2797,
+ "block_median_error_pct": 2.0,
+ "block_within_20pct": 99.9,
+ "chunk_4096KiB_median_error_pct": 18.8,
+ "chunk_4096KiB_within_20pct": 52.9,
+ "chunk_4096KiB_count": 17,
+ "chunk_512KiB_median_error_pct": 5.4,
+ "chunk_512KiB_within_20pct": 77.9,
+ "chunk_512KiB_count": 131
+}
