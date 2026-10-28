@@ -15,6 +15,7 @@ namespace riptide {
 namespace {
 
 constexpr std::size_t kInitialCapacity = 256 * 1024;
+constexpr std::size_t kExhaustionCheckInterval = 4096;
 
 std::size_t align_up_to_byte(std::size_t bit) noexcept { return (bit + 7) / 8 * 8; }
 
@@ -153,8 +154,18 @@ private:
                         std::vector<Symbol>& buffer, std::size_t& size) {
         constexpr bool kTracksMarkers = std::is_same_v<Symbol, std::uint16_t>;
         Symbol* out = buffer.data();
+        std::size_t symbols_since_check = 0;
 
         for (;;) {
+            // Past the end of the input the reader yields zero bits, which may decode
+            // as literals forever; truncated input is therefore detected here as
+            // well as at the end of each block.
+            if (++symbols_since_check == kExhaustionCheckInterval) {
+                symbols_since_check = 0;
+                if (reader_.exhausted()) {
+                    throw DecodeError("truncated DEFLATE block");
+                }
+            }
             if (buffer.size() - size <= kMaxMatchLength) {
                 check_output_limit();
                 buffer.resize(std::max(buffer.size() * 2, size + kInitialCapacity));
