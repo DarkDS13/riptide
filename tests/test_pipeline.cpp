@@ -87,12 +87,13 @@ RIPTIDE_TEST(pipeline, multi_member_files) {
 }
 
 RIPTIDE_TEST(pipeline, overflow_policies) {
-    // Highly compressible data overflows a small budget in nearly every chunk.
-    const Bytes gzip = test::gzip_compress(test::repetitive(8'000'000, 6));
+    // Text expands about 3x, so a budget of 1.5x the compressed chunk size makes
+    // nearly every chunk overflow at one of its many block boundaries.
+    const Bytes gzip = test::gzip_compress(test::text_like(4'000'000, 6));
     for (const auto policy : {OverflowPolicy::kSerial, OverflowPolicy::kSplit}) {
         auto options = small_chunks(64 * 1024);
         options.overflow = policy;
-        options.max_expansion = 4.0;
+        options.max_expansion = 1.5;
         DecompressionStatistics statistics;
         CHECK(decompresses_correctly(gzip, options, &statistics));
         CHECK(statistics.overflow_splits > 0);
