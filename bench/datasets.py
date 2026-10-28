@@ -86,20 +86,21 @@ def make_fastq(out_dir, size, seed=1):
     gzip_file(tmp, tmp + ".gz")
 
 
-def log_lines(rng, count, start_ms):
+def log_lines(rng, count, start_ms, events_per_ms=8):
+    """Service logs of a busy API: health checks dominate, latencies are short."""
     services = ["api", "auth", "billing", "search", "worker"]
     routes = ["/v1/items", "/v1/items/{id}", "/v1/users/{id}", "/v1/orders", "/health", "/v1/search"]
     levels = ["INFO"] * 18 + ["WARN", "ERROR"]
     status = [200] * 30 + [201, 204, 304, 400, 404, 500]
-    s = rng.integers(0, len(services), count)
-    r = rng.integers(0, len(routes), count)
+    s = rng.choice(len(services), count, p=[0.70, 0.10, 0.05, 0.10, 0.05])
+    r = rng.choice(len(routes), count, p=[0.10, 0.05, 0.05, 0.05, 0.70, 0.05])
     lv = rng.integers(0, len(levels), count)
     st = rng.integers(0, len(status), count)
-    latency = rng.integers(1, 40, count)
-    user = rng.integers(0, 50, count)
+    latency = rng.geometric(0.5, count)
+    user = rng.integers(0, 10, count)
     lines = []
     for i in range(count):
-        ms = start_ms + i * 7
+        ms = start_ms + i // events_per_ms
         lines.append(
             '{"ts":"2026-10-29T%02d:%02d:%02d.%03dZ","level":"%s","service":"%s","route":"%s",'
             '"status":%d,"latency_ms":%d,"user":"u%02d"}\n'
@@ -115,7 +116,7 @@ def make_logs(out_dir, size, seed=2):
     with open(tmp, "wb") as f:
         while written < size:
             chunk = log_lines(rng, 50000, start)
-            start += 50000 * 7
+            start += 50000 // 8
             f.write(chunk)
             written += len(chunk)
     gzip_file(tmp, tmp + ".gz")
