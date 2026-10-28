@@ -4,7 +4,6 @@
 #include <cstring>
 
 #include <riptide/common/bit_reader.hpp>
-#include <riptide/inflate/dynamic_header.hpp>
 
 namespace riptide {
 namespace {
@@ -47,13 +46,14 @@ std::optional<BlockBoundary> BlockFinder::find(std::size_t begin_bit, std::size_
 std::optional<std::size_t> BlockFinder::find_dynamic(std::size_t begin_bit,
                                                      std::size_t end_bit) const {
     end_bit = std::min(end_bit, input_.size() * 8);
+    Scratch scratch;
     std::size_t bit = begin_bit;
     while (bit < end_bit) {
         const std::size_t byte = bit / 8;
         const std::uint64_t word = load_word(input_, byte);
         for (unsigned shift = static_cast<unsigned>(bit % 8); shift < 8 && bit < end_bit;
              ++shift, ++bit) {
-            if (passes_header_prefilter(word >> shift) && is_dynamic_header(bit)) {
+            if (passes_header_prefilter(word >> shift) && is_dynamic_header(bit, scratch)) {
                 return bit;
             }
         }
@@ -80,15 +80,10 @@ std::optional<std::size_t> BlockFinder::find_stored(std::size_t begin_bit,
     return std::nullopt;
 }
 
-bool BlockFinder::is_dynamic_header(std::size_t bit) const {
+bool BlockFinder::is_dynamic_header(std::size_t bit, Scratch& scratch) const {
     BitReader reader(input_, bit + 3);
-    DynamicCodeLengths lengths;
-    if (!read_dynamic_code_lengths(reader, lengths)) {
-        return false;
-    }
-    HuffmanDecoder literal_length;
-    HuffmanDecoder distance;
-    return build_dynamic_decoders(lengths, literal_length, distance);
+    return read_dynamic_code_lengths(reader, scratch.lengths, scratch.code_length) &&
+           build_dynamic_decoders(scratch.lengths, scratch.literal_length, scratch.distance);
 }
 
 }  // namespace riptide

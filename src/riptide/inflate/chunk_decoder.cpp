@@ -97,7 +97,7 @@ public:
                                  HuffmanDecoder::fixed_distance());
                     break;
                 case BlockType::kDynamic:
-                    if (!read_dynamic_code_lengths(reader_, lengths_) ||
+                    if (!read_dynamic_code_lengths(reader_, lengths_, code_length_) ||
                         !build_dynamic_decoders(lengths_, literal_length_, distance_)) {
                         throw DecodeError("invalid dynamic Huffman block header");
                     }
@@ -294,6 +294,7 @@ private:
     std::size_t output_limit_ = std::numeric_limits<std::size_t>::max();
 
     DynamicCodeLengths lengths_;
+    HuffmanDecoder code_length_;
     HuffmanDecoder literal_length_;
     HuffmanDecoder distance_;
 };
