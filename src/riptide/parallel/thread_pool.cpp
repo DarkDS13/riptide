@@ -58,8 +58,8 @@ bool ThreadPool::run_pending_task() {
     const std::size_t index = current_pool == this ? current_index : 0;
     if ((current_pool == this && pop_own(index, task)) || steal(index, task)) {
         queued_.fetch_sub(1);
-        task();
         executed_.fetch_add(1, std::memory_order_relaxed);
+        task();
         return true;
     }
     return false;
@@ -80,8 +80,10 @@ void ThreadPool::worker_loop(std::size_t index) {
         Task task;
         if (pop_own(index, task) || steal(index, task)) {
             queued_.fetch_sub(1);
-            task();
+            // Counted when started: a group's wait() may return before this worker
+            // gets back here, and the statistics must already include the task then.
             executed_.fetch_add(1, std::memory_order_relaxed);
+            task();
             continue;
         }
         std::unique_lock lock(sleep_mutex_);

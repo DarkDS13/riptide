@@ -15,7 +15,7 @@ namespace riptide {
 
 /// Counters describing how work was distributed across the pool.
 struct ThreadPoolStatistics {
-    std::uint64_t tasks_executed = 0;
+    std::uint64_t tasks_executed = 0;  ///< Tasks started by any thread.
     std::uint64_t tasks_stolen = 0;  ///< Tasks run by a thread other than the one they were queued on.
 };
 
