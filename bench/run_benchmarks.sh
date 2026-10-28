@@ -8,6 +8,7 @@
 #   E2 window_chunks.csv   window strategies (M3) across chunk sizes, 10 threads
 #   E3 window_threads.csv  serial vs blocked window resolution across thread counts, 64 KiB chunks
 #   E4 m1_policies.csv     chunking and overflow policies (M1) on high-ratio and mixed data
+#      m1_budget.csv       overflow policies under a tight output budget, few chunks per thread
 #   E5 memory.csv          peak resident memory per configuration (via /usr/bin/time)
 set -euo pipefail
 
@@ -41,6 +42,9 @@ echo "E4: chunking and overflow policies"
     --chunking fixed,work-balanced --overflow serial,split \
     --repetitions "$REPS" --output "$OUT/m1_policies.csv" \
     "$DATA/logs.ndjson.gz" "$DATA/mixed.tar.gz" "$DATA/silesia_x5.tar.gz"
+"$BENCH" --threads 10 --chunk-sizes 4M,16M --windows blocked --overflow serial,split \
+    --max-expansion 4 --repetitions "$REPS" --output "$OUT/m1_budget.csv" \
+    "$DATA/logs.ndjson.gz" "$DATA/silesia_x5.tar.gz"
 
 echo "E5: peak memory"
 echo "file,chunk_size,window,overflow,repetition,max_rss_bytes,output_bytes" > "$OUT/memory.csv"

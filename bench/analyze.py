@@ -233,9 +233,10 @@ def window_threads(rows):
 def m1_policies(rows):
     g = group(rows)
     out, comparisons = {}, []
-    for f in sorted({r["file"] for r in rows}):
-        cell = {(k[5], k[6]): v for k, v in g.items() if k[0] == f}
-        out[f] = {f"{c}/{o}": {
+    for f, chunk in sorted({(r["file"], r["chunk_size"]) for r in rows}):
+        cell = {(k[5], k[6]): v for k, v in g.items() if k[0] == f and k[3] == chunk}
+        name = f"{f} {chunk // 1024} KiB"
+        out[name] = {f"{c}/{o}": {
             "total_seconds": median(seconds(v)), "iqr": iqr(seconds(v)),
             "decode_seconds": median(stat(v, "decode_seconds")),
             "partition_seconds": median(stat(v, "partition_seconds")),
@@ -245,7 +246,9 @@ def m1_policies(rows):
         } for (c, o), v in cell.items()}
         base = cell[("fixed", "serial")]
         for key in [("fixed", "split"), ("work-balanced", "serial"), ("work-balanced", "split")]:
-            comparisons.append(compare(f"{f} total: {key[0]}/{key[1]} vs fixed/serial", base, cell[key], seconds))
+            if key in cell:
+                comparisons.append(compare(f"{name} total: {key[0]}/{key[1]} vs fixed/serial",
+                                           base, cell[key], seconds))
     return out, finish(comparisons)
 
 
@@ -290,7 +293,7 @@ def markdown(summary):
                              f"{v['window_seconds'] * 1e3:.2f} | {v['rounds']} | {v['window_share'] * 100:.1f}% | "
                              f"{v['total_seconds'] * 1e3:.1f} |")
     for title, key in (("E2 comparisons", "window_chunks_tests"), ("E3 comparisons", "window_threads_tests"),
-                       ("E4 comparisons", "m1_tests")):
+                       ("E4 comparisons", "m1_tests"), ("E4 budget comparisons", "m1_budget_tests")):
         lines += ["", f"## {title} (Mann-Whitney U, Holm-corrected)", "",
                   "| Comparison | Baseline median | Candidate median | Ratio | p (Holm) | Significant |",
                   "|---|---|---|---|---|---|"]
@@ -302,9 +305,15 @@ def markdown(summary):
     for t in summary["window_threads"]:
         lines.append(f"| {t['threads']} | {t['serial_window_seconds'] * 1e3:.2f} | {t['blocked_window_seconds'] * 1e3:.2f} | "
                      f"{t['serial_total_seconds'] * 1e3:.1f} | {t['blocked_total_seconds'] * 1e3:.1f} |")
-    lines += ["", "## E4 Chunking and overflow policies (10 threads, 4 MiB)", "",
+    lines += ["", "## E4 Chunking and overflow policies (10 threads, 20x output budget)", "",
               "| File | Chunking/overflow | Total ms | Decode ms | λ | Overflow splits | Chain |", "|---|---|---|---|---|---|---|"]
     for f, cells in summary["m1"].items():
+        for k, v in cells.items():
+            lines.append(f"| {f} | {k} | {v['total_seconds'] * 1e3:.1f} | {v['decode_seconds'] * 1e3:.1f} | "
+                         f"{v['decode_imbalance']:.2f} | {v['overflow_splits']} | {v['chain_length']} |")
+    lines += ["", "## E4 Overflow policies under a 4x output budget (10 threads)", "",
+              "| File | Chunking/overflow | Total ms | Decode ms | λ | Overflow splits | Chain |", "|---|---|---|---|---|---|---|"]
+    for f, cells in summary["m1_budget"].items():
         for k, v in cells.items():
             lines.append(f"| {f} | {k} | {v['total_seconds'] * 1e3:.1f} | {v['decode_seconds'] * 1e3:.1f} | "
                          f"{v['decode_imbalance']:.2f} | {v['overflow_splits']} | {v['chain_length']} |")
@@ -329,6 +338,7 @@ def main():
     summary["window_chunks"], summary["window_chunks_tests"] = window_chunks(chunk_rows)
     summary["window_threads"], summary["window_threads_tests"] = window_threads(thread_rows)
     summary["m1"], summary["m1_tests"] = m1_policies(m1_rows)
+    summary["m1_budget"], summary["m1_budget_tests"] = m1_policies(load(path("m1_budget.csv")))
     if os.path.exists(path("memory.csv")):
         summary["memory"] = memory(path("memory.csv"))
 
