@@ -17,7 +17,37 @@ namespace {
 constexpr std::size_t kInitialCapacity = 256 * 1024;
 constexpr std::size_t kExhaustionCheckInterval = 4096;
 
+/// copy_match() may write this many symbols past the end of a match.
+constexpr std::size_t kCopySlack = 16;
+
 std::size_t align_up_to_byte(std::size_t bit) noexcept { return (bit + 7) / 8 * 8; }
+
+/// Copies a match of `length` symbols from `distance` symbols back to `destination`.
+///
+/// Matches are copied in fixed 16-byte steps, which compile to single vector loads
+/// and stores instead of a call to memcpy with a variable length; the last step may
+/// write past the match into spare buffer capacity, which is overwritten later.
+/// When a step spans no more than `distance` symbols it reads only symbols written
+/// before it, so overlapping matches are still copied correctly. Shorter distances
+/// repeat a short pattern and are copied element by element (or with memset for runs
+/// of a single byte).
+template <typename Symbol>
+void copy_match(Symbol* destination, std::size_t distance, std::size_t length) noexcept {
+    constexpr std::size_t kStep = 16 / sizeof(Symbol);
+    static_assert(kStep <= kCopySlack, "a copy step must fit in the buffer slack");
+    const Symbol* source = destination - distance;
+    if (distance >= kStep) {
+        for (std::size_t i = 0; i < length; i += kStep) {
+            std::memcpy(destination + i, source + i, kStep * sizeof(Symbol));
+        }
+    } else if (sizeof(Symbol) == 1 && distance == 1) {
+        std::memset(destination, static_cast<int>(*source), length);
+    } else {
+        for (std::size_t i = 0; i < length; ++i) {
+            destination[i] = source[i];
+        }
+    }
+}
 
 /// Block-by-block DEFLATE decoder that writes 16-bit symbols while the preceding
 /// window is unknown and switches to 8-bit output once it no longer matters.
@@ -166,7 +196,7 @@ private:
                     throw DecodeError("truncated DEFLATE block");
                 }
             }
-            if (buffer.size() - size <= kMaxMatchLength) {
+            if (buffer.size() - size <= kMaxMatchLength + kCopySlack) {
                 check_output_limit();
                 buffer.resize(std::max(buffer.size() * 2, size + kInitialCapacity));
                 out = buffer.data();
@@ -205,25 +235,18 @@ private:
             Symbol* destination = out + size;
             const Symbol* source = destination - match_distance;
             if constexpr (kTracksMarkers) {
-                // Element-wise forward copy also handles overlapping matches
-                // (distance < length). OR-ing the copied symbols tells whether any
-                // marker was copied, since only markers have the top bit set.
+                // Only markers have the top bit set, so OR-ing the source tells whether
+                // a marker is copied. An overlapping match repeats its first
+                // `distance` symbols, so those are all that need checking.
                 std::uint16_t seen = 0;
-                for (std::size_t i = 0; i < length; ++i) {
-                    const std::uint16_t value = source[i];
-                    destination[i] = value;
-                    seen = static_cast<std::uint16_t>(seen | value);
+                for (std::size_t i = 0, n = std::min(length, match_distance); i < n; ++i) {
+                    seen = static_cast<std::uint16_t>(seen | source[i]);
                 }
                 if (is_marker(seen)) {
                     last_marker_end_ = size + length;
                 }
-            } else if (match_distance >= length) {
-                std::memcpy(destination, source, length);
-            } else {
-                for (std::size_t i = 0; i < length; ++i) {
-                    destination[i] = source[i];
-                }
             }
+            copy_match(destination, match_distance, length);
             size += length;
         }
     }

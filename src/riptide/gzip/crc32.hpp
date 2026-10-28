@@ -11,6 +11,11 @@ namespace riptide {
 /// `crc32_update(0, data)` returns the same value as zlib's `crc32(0, data, size)`.
 [[nodiscard]] std::uint32_t crc32_update(std::uint32_t crc, std::span<const std::uint8_t> data) noexcept;
 
+/// Table-driven (slice-by-8) implementation, used where no CRC instruction exists.
+/// crc32_update() uses the ARMv8 CRC-32 instructions when the target has them.
+[[nodiscard]] std::uint32_t crc32_update_portable(std::uint32_t crc,
+                                                  std::span<const std::uint8_t> data) noexcept;
+
 /// Combines CRC(A) and CRC(B) into CRC(A || B), where `length_b` is the size of B.
 ///
 /// This is what makes checksum computation parallel: independent workers compute

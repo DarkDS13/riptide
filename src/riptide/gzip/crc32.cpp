@@ -3,6 +3,10 @@
 #include <array>
 #include <cstring>
 
+#if defined(__ARM_FEATURE_CRC32)
+#include <arm_acle.h>
+#endif
+
 namespace riptide {
 namespace {
 
@@ -67,9 +71,36 @@ std::uint32_t x_to_the_8n(std::size_t byte_count) noexcept {
     return result;
 }
 
+#if defined(__ARM_FEATURE_CRC32)
+/// ARMv8 has CRC-32 instructions for exactly gzip's polynomial; they process eight
+/// bytes per instruction, several times faster than the table-driven loop.
+std::uint32_t crc32_hardware(std::uint32_t crc, const std::uint8_t* bytes,
+                             std::size_t remaining) noexcept {
+    while (remaining >= 8) {
+        std::uint64_t word = 0;
+        std::memcpy(&word, bytes, sizeof(word));
+        crc = __crc32d(crc, word);
+        bytes += 8;
+        remaining -= 8;
+    }
+    while (remaining-- > 0) {
+        crc = __crc32b(crc, *bytes++);
+    }
+    return crc;
+}
+#endif
+
 }  // namespace
 
 std::uint32_t crc32_update(std::uint32_t crc, std::span<const std::uint8_t> data) noexcept {
+#if defined(__ARM_FEATURE_CRC32)
+    return ~crc32_hardware(~crc, data.data(), data.size());
+#else
+    return crc32_update_portable(crc, data);
+#endif
+}
+
+std::uint32_t crc32_update_portable(std::uint32_t crc, std::span<const std::uint8_t> data) noexcept {
     crc = ~crc;
     const std::uint8_t* bytes = data.data();
     std::size_t remaining = data.size();
