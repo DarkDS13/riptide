@@ -29,6 +29,25 @@ constexpr bool passes_header_prefilter(std::uint64_t bits) noexcept {
     return non_final_dynamic && hlit < 30 && hdist < 30;
 }
 
+/// Second filter: the code-length code, up to 19 lengths of 3 bits starting at
+/// bit 17 of the header, must be complete (its Kraft sum must be exactly one). One
+/// unaligned load holds all of it, so most of the candidates that pass the
+/// pre-filter are rejected without constructing a bit reader or a decoder.
+bool passes_code_length_filter(std::span<const std::uint8_t> data, std::size_t bit) noexcept {
+    const std::uint64_t header = load_word(data, bit / 8) >> (bit % 8);
+    const auto count = static_cast<unsigned>((header >> 13) & 0xFU) + 4;
+    const std::size_t lengths_bit = bit + 17;
+    const std::uint64_t lengths = load_word(data, lengths_bit / 8) >> (lengths_bit % 8);
+    unsigned kraft = 0;  // in units of 2^-7
+    for (unsigned i = 0; i < count; ++i) {
+        const auto length = static_cast<unsigned>((lengths >> (3 * i)) & 0x7U);
+        if (length != 0) {
+            kraft += 128U >> length;
+        }
+    }
+    return kraft == 128;
+}
+
 /// Length of one search segment of find(): 64 KiB of input.
 constexpr std::size_t kSegmentBits = 64 * 1024 * 8;
 
@@ -63,7 +82,8 @@ std::optional<std::size_t> BlockFinder::find_dynamic(std::size_t begin_bit,
         const std::uint64_t word = load_word(input_, byte);
         for (unsigned shift = static_cast<unsigned>(bit % 8); shift < 8 && bit < end_bit;
              ++shift, ++bit) {
-            if (passes_header_prefilter(word >> shift) && is_dynamic_header(bit, scratch)) {
+            if (passes_header_prefilter(word >> shift) && passes_code_length_filter(input_, bit) &&
+                is_dynamic_header(bit, scratch)) {
                 return bit;
             }
         }
