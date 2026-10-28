@@ -55,6 +55,11 @@ public:
 
     [[nodiscard]] ThreadPoolStatistics statistics() const noexcept;
 
+    /// Seconds each worker has spent running tasks since the pool was created
+    /// (index i = worker i). Differences of two snapshots give per-worker busy
+    /// time for a stage, from which load imbalance is computed.
+    [[nodiscard]] std::vector<double> busy_seconds() const;
+
     /// Number of hardware threads, or 1 if unknown.
     [[nodiscard]] static std::size_t hardware_threads() noexcept;
 
@@ -77,6 +82,8 @@ private:
 
     std::atomic<std::size_t> queued_{0};
     std::atomic<std::size_t> next_queue_{0};
+    /// Nanoseconds spent running tasks, per worker.
+    std::vector<std::atomic<std::uint64_t>> busy_nanoseconds_;
     std::atomic<std::uint64_t> executed_{0};
     std::atomic<std::uint64_t> stolen_{0};
 };

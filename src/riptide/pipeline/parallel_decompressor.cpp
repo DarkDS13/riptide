@@ -35,6 +35,19 @@ constexpr std::size_t kChecksumGrain = 4 * 1024 * 1024;
 /// chunk budget: decoding from a false positive can otherwise expand garbage.
 constexpr std::size_t kSpeculativeLimitFactor = 4;
 
+/// Busiest worker's busy time divided by the mean, between two pool snapshots.
+double imbalance(const std::vector<double>& before, const std::vector<double>& after) {
+    double total = 0.0;
+    double busiest = 0.0;
+    for (std::size_t i = 0; i < after.size(); ++i) {
+        const double busy = after[i] - before[i];
+        total += busy;
+        busiest = std::max(busiest, busy);
+    }
+    const double mean = total / static_cast<double>(after.size());
+    return mean > 0.0 ? busiest / mean : 1.0;
+}
+
 /// A piece of compressed data to be decoded by one task.
 struct DecodeRange {
     /// Known exact start; otherwise the task searches [search_begin_bit, search_end_bit).
@@ -98,8 +111,10 @@ public:
         stats_.partition_seconds = stage.seconds();
 
         stage.restart();
+        const std::vector<double> busy_before = pool_.busy_seconds();
         decode_chunks(deflate_begin);
         stats_.decode_seconds = stage.seconds();
+        stats_.decode_imbalance = imbalance(busy_before, pool_.busy_seconds());
 
         stage.restart();
         link_chain(deflate_begin);

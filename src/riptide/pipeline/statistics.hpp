@@ -31,6 +31,10 @@ struct DecompressionStatistics {
     std::size_t unused_results = 0;       ///< Decoded chunks that did not join the chain.
     std::size_t marked_symbols = 0;       ///< Output held in 16-bit form after the first stage.
 
+    /// Load imbalance of the first stage: the busiest worker's task time divided by
+    /// the mean over all workers (1.0 = perfectly balanced).
+    double decode_imbalance = 1.0;
+
     std::size_t window_rounds = 0;        ///< Dependent steps in window resolution.
     std::size_t window_combinations = 0;  ///< Window compositions/applications performed.
 

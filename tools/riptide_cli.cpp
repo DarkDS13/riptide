@@ -135,6 +135,7 @@ void print_statistics(const riptide::DecompressionStatistics& s, const riptide::
                  "  chunks: %zu planned, %zu in chain, %zu fallback, %zu overflow splits, "
                  "%zu unused, %zu rejected candidates\n"
                  "  window resolution: %zu rounds, %zu compositions; members: %zu\n"
+                 "  first-stage load imbalance: %.2f\n"
                  "  thread pool: %llu tasks, %llu stolen\n",
                  o.threads, riptide::cli::format_size(o.chunk_size).c_str(),
                  std::string(riptide::to_string(o.chunking)).c_str(),
@@ -146,6 +147,7 @@ void print_statistics(const riptide::DecompressionStatistics& s, const riptide::
                  s.total_seconds, "throughput", s.throughput_mb_per_s(), s.planned_chunks,
                  s.chain_length, s.fallback_decodes, s.overflow_splits, s.unused_results,
                  s.rejected_candidates, s.window_rounds, s.window_combinations, s.members,
+                 s.decode_imbalance,
                  static_cast<unsigned long long>(s.pool.tasks_executed),
                  static_cast<unsigned long long>(s.pool.tasks_stolen));
 }

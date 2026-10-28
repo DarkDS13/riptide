@@ -27,7 +27,7 @@ std::string DecompressionStatistics::to_json() const {
         << ",\"overflow_splits\":" << overflow_splits << ",\"fallback_decodes\":" << fallback_decodes
         << ",\"rejected_candidates\":" << rejected_candidates
         << ",\"unused_results\":" << unused_results << ",\"marked_symbols\":" << marked_symbols
-        << ",\"window_rounds\":" << window_rounds
+        << ",\"decode_imbalance\":" << decode_imbalance << ",\"window_rounds\":" << window_rounds
         << ",\"window_combinations\":" << window_combinations
         << ",\"tasks_executed\":" << pool.tasks_executed << ",\"tasks_stolen\":" << pool.tasks_stolen
         << ",\"throughput_mb_per_s\":" << throughput_mb_per_s() << '}';
