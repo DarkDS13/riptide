@@ -104,6 +104,13 @@ RIPTIDE_TEST(crc32, matches_zlib) {
     }
 }
 
+RIPTIDE_TEST(crc32, hardware_and_portable_paths_agree) {
+    for (const std::size_t size : {0U, 3U, 8U, 13U, 4096U, 100'003U}) {
+        const Bytes data = test::random_bytes(size, static_cast<std::uint32_t>(size) + 1);
+        CHECK_EQ(crc32_update(0x1234U, data), crc32_update_portable(0x1234U, data));
+    }
+}
+
 RIPTIDE_TEST(crc32, combine_equals_crc_of_concatenation) {
     const Bytes data = test::random_bytes(200'000, 42);
     const std::uint32_t whole = crc32_update(0, data);
