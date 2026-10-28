@@ -1,0 +1,785 @@
+<title>Riptide — Project Guide</title>
+
+<style>
+  /* ---------- tokens: light (bare :root = complete palette) ---------- */
+  :root {
+    --bg:        #F4F8F9;
+    --surface:   #FFFFFF;
+    --surface-2: #EAF1F3;
+    --ink:       #0D1A20;
+    --ink-mid:   #3C525C;
+    --ink-soft:  #5F757F;
+    --line:      #D5E1E5;
+    --line-soft: #E6EEF0;
+    --accent:    #0B6E7F;
+    --accent-ink:#08505D;
+    --accent-bg: #E0F0F2;
+    --hazard:    #B23C10;
+    --hazard-bg: #FBEAE1;
+    --good:      #1B6F52;
+    --good-bg:   #E2F2EC;
+    --shadow:    0 1px 2px rgba(13,26,32,.06), 0 8px 24px -16px rgba(13,26,32,.28);
+
+    --display: Charter, "Iowan Old Style", Georgia, "Times New Roman", serif;
+    --body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:        #091316;
+      --surface:   #0F1D22;
+      --surface-2: #16282F;
+      --ink:       #E8F1F3;
+      --ink-mid:   #AFC3CA;
+      --ink-soft:  #8AA0A9;
+      --line:      #22363E;
+      --line-soft: #1A2C33;
+      --accent:    #56C4D8;
+      --accent-ink:#8FDCEB;
+      --accent-bg: #0E2A31;
+      --hazard:    #FF9166;
+      --hazard-bg: #2E1810;
+      --good:      #5BD3A8;
+      --good-bg:   #0D2820;
+      --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg:        #091316;
+    --surface:   #0F1D22;
+    --surface-2: #16282F;
+    --ink:       #E8F1F3;
+    --ink-mid:   #AFC3CA;
+    --ink-soft:  #8AA0A9;
+    --line:      #22363E;
+    --line-soft: #1A2C33;
+    --accent:    #56C4D8;
+    --accent-ink:#8FDCEB;
+    --accent-bg: #0E2A31;
+    --hazard:    #FF9166;
+    --hazard-bg: #2E1810;
+    --good:      #5BD3A8;
+    --good-bg:   #0D2820;
+    --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+    padding: 0 20px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 760px; margin: 0 auto; }
+  p { margin: 0 0 1.05em; }
+  strong { font-weight: 650; color: var(--ink); }
+  a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+  code {
+    font-family: var(--mono);
+    font-size: .86em;
+    background: var(--surface-2);
+    padding: .12em .38em;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+
+  pre {
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.55;
+    background: var(--surface-2);
+    color: var(--ink);
+    padding: 14px 16px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 0 0 1.1em;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead { border-bottom: 1px solid var(--line); padding: 72px 0 34px; margin-bottom: 40px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 20px;
+  }
+  h1 {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(38px, 7vw, 56px); line-height: 1.04; letter-spacing: -.018em;
+    margin: 0 0 18px; text-wrap: balance;
+  }
+  .standfirst { font-size: 20px; line-height: 1.5; color: var(--ink-mid); margin: 0 0 28px; text-wrap: pretty; }
+  .byline { display: flex; flex-wrap: wrap; gap: 6px 22px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft); }
+
+  /* ---------- toc ---------- */
+  .toc {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+    padding: 24px 26px; margin-bottom: 56px; box-shadow: var(--shadow);
+  }
+  .toc h2 {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--ink-soft); margin: 0 0 14px; font-weight: 500;
+  }
+  .toc ol { margin: 0; padding: 0; list-style: none; counter-reset: toc; display: grid; gap: 7px; }
+  .toc li { counter-increment: toc; display: flex; gap: 12px; align-items: baseline; }
+  .toc li::before { content: counter(toc, decimal-leading-zero); font-family: var(--mono); font-size: 11.5px; color: var(--accent); flex: none; }
+  .toc a { color: var(--ink); text-decoration: none; }
+  .toc a:hover { color: var(--accent-ink); text-decoration: underline; }
+
+  /* ---------- sections ---------- */
+  section { margin-bottom: 64px; scroll-margin-top: 24px; }
+  h2 {
+    font-family: var(--display); font-size: clamp(26px, 4vw, 32px); line-height: 1.18;
+    letter-spacing: -.012em; font-weight: 700; margin: 0 0 8px; text-wrap: balance;
+  }
+  .secnum { display: block; font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em; color: var(--accent); margin-bottom: 10px; }
+  .dek { color: var(--ink-soft); font-size: 16px; margin: 0 0 26px; padding-bottom: 18px; border-bottom: 1px solid var(--line-soft); }
+  h3 { font-family: var(--body); font-size: 17.5px; font-weight: 650; letter-spacing: -.005em; margin: 32px 0 10px; }
+
+  .pull {
+    font-family: var(--display); font-size: 21px; line-height: 1.42; color: var(--ink);
+    border-left: 3px solid var(--accent); padding: 4px 0 4px 22px; margin: 28px 0;
+  }
+
+  .note { background: var(--accent-bg); border-radius: 5px; padding: 18px 20px; margin: 24px 0; font-size: 15.5px; color: var(--ink-mid); }
+  .note p:last-child { margin-bottom: 0; }
+  .note .label, .warn .label {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+    display: block; margin-bottom: 7px;
+  }
+  .note .label { color: var(--accent-ink); }
+  .warn { background: var(--hazard-bg); border-radius: 5px; padding: 18px 20px; margin: 24px 0; font-size: 15.5px; color: var(--ink-mid); }
+  .warn .label { color: var(--hazard); }
+  .warn p:last-child { margin-bottom: 0; }
+
+  ul.plain { margin: 0 0 1.05em; padding-left: 20px; }
+  ul.plain li { margin-bottom: .5em; }
+
+  /* ---------- status ---------- */
+  .status { display: grid; gap: 8px; margin: 22px 0; }
+  .status-row {
+    display: grid; grid-template-columns: 78px 1fr; gap: 14px; align-items: baseline;
+    padding: 11px 14px; border-radius: 5px; background: var(--surface); border: 1px solid var(--line-soft);
+    font-size: 15.5px;
+  }
+  .pill {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 3px; text-align: center; font-weight: 600;
+  }
+  .pill.done { background: var(--good-bg); color: var(--good); }
+  .pill.next { background: var(--surface-2); color: var(--ink-soft); }
+
+  /* ---------- timeline ---------- */
+  .timeline { list-style: none; margin: 24px 0; padding: 0; display: grid; gap: 0; }
+  .timeline li { display: grid; grid-template-columns: 96px 1fr; gap: 18px; padding: 14px 0; border-top: 1px solid var(--line-soft); }
+  .timeline .when { font-family: var(--mono); font-size: 12px; color: var(--accent); padding-top: 3px; }
+  .timeline h4 { margin: 0 0 4px; font-size: 16px; font-weight: 650; }
+  .timeline p { margin: 0; font-size: 15.5px; color: var(--ink-mid); }
+
+  /* ---------- figures ---------- */
+  figure { margin: 30px 0; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 22px 20px 16px; }
+  .scroll { overflow-x: auto; }
+  figure svg { display: block; width: 100%; min-width: 520px; height: auto; }
+  figcaption { font-size: 14px; color: var(--ink-soft); margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line-soft); line-height: 1.5; }
+
+  /* ---------- tables ---------- */
+  .tablewrap { overflow-x: auto; margin: 22px 0; }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14.5px; }
+  th {
+    text-align: left; font-family: var(--mono); font-size: 11px; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 500; padding: 0 12px 9px 0; border-bottom: 1px solid var(--line); vertical-align: bottom;
+  }
+  td { padding: 11px 12px 11px 0; border-bottom: 1px solid var(--line-soft); vertical-align: top; color: var(--ink-mid); }
+  td:first-child { color: var(--ink); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td:last-child, th:last-child { padding-right: 0; }
+  .tag {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+    padding: 1px 6px; border-radius: 3px; white-space: nowrap;
+  }
+  .tag.m { background: var(--good-bg); color: var(--good); }
+  .tag.e { background: var(--hazard-bg); color: var(--hazard); }
+  .tag.p { background: var(--surface-2); color: var(--ink-soft); }
+
+  /* ---------- slide cards ---------- */
+  .slide {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+    padding: 22px 22px 8px; margin: 22px 0; box-shadow: var(--shadow);
+  }
+  .slide-head { display: flex; gap: 14px; align-items: baseline; margin-bottom: 14px; }
+  .slide-no {
+    font-family: var(--mono); font-size: 12px; color: var(--accent); background: var(--accent-bg);
+    padding: 3px 8px; border-radius: 3px; flex: none;
+  }
+  .slide-head h4 { margin: 0; font-size: 18px; font-weight: 650; font-family: var(--display); }
+  .slide dl { margin: 0; display: grid; gap: 14px; }
+  .slide dt {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 4px;
+  }
+  .slide dd { margin: 0 0 4px; font-size: 15.5px; color: var(--ink-mid); }
+  .slide dd p { margin: 0 0 .7em; }
+  .slide .say {
+    font-family: var(--display); font-size: 16.5px; line-height: 1.55; color: var(--ink);
+    background: var(--surface-2); border-radius: 5px; padding: 12px 15px; margin: 0;
+  }
+  .slide ul { margin: 0 0 .6em; padding-left: 18px; }
+  .slide li { margin-bottom: .35em; }
+
+  .stages { counter-reset: stage; list-style: none; margin: 0 0 .6em; padding: 0; display: grid; gap: 8px; }
+  .stages li { display: grid; grid-template-columns: 30px 1fr; gap: 8px; }
+  .stages .n {
+    font-family: var(--mono); font-size: 12px; color: var(--ink-soft); background: var(--surface-2);
+    border-radius: 3px; text-align: center; height: 22px; line-height: 22px;
+  }
+  .stages .n.ours { background: var(--hazard-bg); color: var(--hazard); font-weight: 700; }
+
+  /* ---------- Q&A ---------- */
+  .qa { display: grid; gap: 18px; }
+  .q { border-top: 1px solid var(--line); padding-top: 16px; }
+  .q h4 { margin: 0 0 8px; font-size: 16.5px; font-weight: 650; display: flex; gap: 10px; }
+  .q h4::before { content: "Q"; font-family: var(--mono); font-size: 12px; color: var(--hazard); flex: none; padding-top: 3px; }
+  .q p { font-size: 15.5px; color: var(--ink-mid); margin: 0 0 .7em 22px; }
+  .q p:last-child { margin-bottom: 0; }
+
+  .gloss { margin: 0; display: grid; gap: 14px; }
+  .gloss > div { display: grid; grid-template-columns: 160px 1fr; gap: 16px; font-size: 15.5px; }
+  .gloss dt { font-weight: 650; color: var(--ink); }
+  .gloss dd { margin: 0; color: var(--ink-mid); }
+
+  footer { border-top: 1px solid var(--line); padding-top: 22px; font-size: 14px; color: var(--ink-soft); }
+
+  @media (max-width: 620px) {
+    body { font-size: 16px; padding: 0 16px 72px; }
+    .masthead { padding-top: 48px; }
+    .gloss > div, .timeline li { grid-template-columns: 1fr; gap: 4px; }
+    .status-row { grid-template-columns: 1fr; gap: 6px; }
+    .pill { justify-self: start; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">IT 301 Parallel Computing · Team guide</p>
+    <h1>Riptide</h1>
+    <p class="standfirst">Breaking the serial window chain in parallel gzip decompression. Everything we have built, decided and measured so far, and how to explain every slide in both presentations.</p>
+    <div class="byline">
+      <span>Devansh Hiren Shah · 241IT024</span>
+      <span>Mantri Samarth Prakash · 241IT043</span>
+      <span>Shubh Minesh Thakkar · 241IT076</span>
+      <span>Ritesh Bhagat · 241IT063</span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#glance">Where we are</a></li>
+      <li><a href="#idea">The project in one page</a></li>
+      <li><a href="#concepts">Five ideas you must understand</a></li>
+      <li><a href="#journey">What we have done so far</a></li>
+      <li><a href="#meth">Methodology presentation, slide by slide</a></li>
+      <li><a href="#final">Final presentation, slide by slide</a></li>
+      <li><a href="#numbers">Every number and where it comes from</a></li>
+      <li><a href="#limits">Honest limits and later work</a></li>
+      <li><a href="#qa">Questions to expect in the viva</a></li>
+      <li><a href="#files">Files and how to reproduce</a></li>
+      <li><a href="#gloss">Glossary</a></li>
+    </ol>
+  </nav>
+
+  <!-- ===================================================== 01 -->
+  <section id="glance">
+    <span class="secnum">01</span>
+    <h2>Where we are</h2>
+    <p class="dek">Component 1 is done, Component 2 is ready to present, Component 3 is the implementation.</p>
+
+    <div class="status">
+      <div class="status-row"><span class="pill done">Done</span><span><strong>Problem statement report and presentation</strong> (Component 1, 5 marks).</span></div>
+      <div class="status-row"><span class="pill done">Done</span><span><strong>Base paper chosen and read in full:</strong> rapidgzip (HPDC '23), plus its changelog up to v0.16.0.</span></div>
+      <div class="status-row"><span class="pill done">Done</span><span><strong>Novelty verified</strong> against the paper and the released software.</span></div>
+      <div class="status-row"><span class="pill done">Done</span><span><strong>Reference decoder and profiler</strong> written from scratch; bit-identical to zlib on all 13 Silesia streams.</span></div>
+      <div class="status-row"><span class="pill done">Done</span><span><strong>Prototype of our main idea (M3)</strong> on the Silesia corpus: exact at both chunk sizes tested.</span></div>
+      <div class="status-row"><span class="pill done">Done</span><span><strong>Methodology report</strong> (IEEE, three subsections) and <strong>methodology presentation</strong> (Component 2, 10 marks).</span></div>
+      <div class="status-row"><span class="pill next">Next</span><span><strong>Time the serial step inside rapidgzip.</strong> This decides how large a speedup we can claim for M3.</span></div>
+      <div class="status-row"><span class="pill next">Next</span><span><strong>Implement M3 and M1 in a fork of rapidgzip</strong> and benchmark against the unmodified code at the same commit.</span></div>
+      <div class="status-row"><span class="pill next">Next</span><span><strong>Fill the final presentation's "To measure" cells</strong> with real results (Component 3, 25 marks).</span></div>
+    </div>
+
+    <div class="warn">
+      <span class="label">Read the rubric line twice</span>
+      <p>The methodology viva is worth 8 of the 10 marks and is graded <strong>individually</strong>. The presentation alone does not guarantee marks. Every one of us must be able to explain section 03 without notes.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== 02 -->
+  <section id="idea">
+    <span class="secnum">02</span>
+    <h2>The project in one page</h2>
+    <p class="dek">If you only read one section, read this one.</p>
+
+    <p><strong>The problem.</strong> Gzip is everywhere: logs, datasets, genomics archives, software packages. Decompressing a single <code>.gz</code> file is normally a one-core job, because each part of the file can refer back to data decoded just before it.</p>
+
+    <p><strong>The base paper.</strong> <em>Rapidgzip</em> (Knespel and Brunst, HPDC 2023) already decompresses unmodified gzip files in parallel. Each thread decodes its own chunk without knowing the 32 KB of data that came before it, leaving placeholders called <em>markers</em> for the unknown bytes. Once the earlier data is known, the markers are filled in.</p>
+
+    <p><strong>The gap.</strong> To fill in chunk <em>k</em>, you need the last 32 KB of chunk <em>k−1</em> fully resolved, which needs chunk <em>k−2</em>, and so on. Rapidgzip resolves this <strong>chain of windows one chunk at a time</strong>. In section 2.2 the paper states that this propagation cannot be parallelised, and it attributes its scaling limit (around 64 cores on Silesia and 48 on FASTQ, without an index) to this step.</p>
+
+    <p class="pull">Our main contribution (M3) shows that this chain <em>can</em> be parallelised. It is a prefix computation, so a parallel scan resolves it in log₂N rounds instead of N−1 steps.</p>
+
+    <p><strong>Two smaller contributions.</strong> M1 sizes chunks by estimated work instead of compressed bytes, and splits chunks that grow too large across idle threads; rapidgzip instead caps them, which serialises decoding above about 20× compression. M2 stores unresolved bytes compactly instead of widening every byte to 16 bits.</p>
+
+    <p><strong>What we have shown so far.</strong> On the Silesia corpus, the same benchmark the base paper uses, our prototype resolves the windows exactly with the scan, and the final output is bit-identical to <code>zlib</code>. We have <em>not</em> yet measured any speedup; that is the implementation phase.</p>
+  </section>
+
+  <!-- ===================================================== 03 -->
+  <section id="concepts">
+    <span class="secnum">03</span>
+    <h2>Five ideas you must understand</h2>
+    <p class="dek">Every viva question about the method comes back to one of these.</p>
+
+    <h3>1. Gzip refers back into its own output</h3>
+    <p>Gzip (the DEFLATE format) compresses repeats by writing instructions like <em>"copy 12 bytes from 5,000 bytes ago."</em> These back-references reach at most <strong>32 KB</strong> back. That 32 KB is called the <em>window</em>. To decode any position you need the window before it.</p>
+
+    <h3>2. Reading is separate from copying</h3>
+    <p>Turning compressed bits into symbols (a literal byte, or a copy instruction) needs nothing that was decoded earlier. Only <em>executing</em> a copy needs earlier output. So a thread can decode its chunk without the earlier data, and write a marker wherever it would have copied an unknown byte:</p>
+<pre>marker 256 + j   means   "byte j of the 32 KB window before this chunk"</pre>
+    <p>This two-stage idea comes from pugz (2019) and is used by rapidgzip. It is inherited, not ours.</p>
+
+    <h3>3. The window chain</h3>
+    <p>After the first stage, the last 32 KB of chunk <em>k</em> is a mixture of known bytes and markers pointing into the window of chunk <em>k−1</em>. Call that mapping <em>f<sub>k</sub></em>. Then each window is computed from the previous one: <em>W<sub>k</sub> = f<sub>k</sub>(W<sub>k−1</sub>)</em>. Done in order, that is N−1 dependent steps for N chunks. This is the step the base paper says cannot be parallelised.</p>
+
+    <h3>4. Why a parallel scan works (our main idea)</h3>
+    <p>If you combine two of these maps, <em>f<sub>k</sub></em> after <em>f<sub>k−1</sub></em>, you get another map of exactly the same kind: every entry is still either a known byte or a pointer into an earlier window. And combining maps is <strong>associative</strong>: (a∘b)∘c gives the same result as a∘(b∘c). Any computation of the form "combine everything before me" with an associative operator is a <strong>prefix scan</strong>, one of the standard parallel algorithms. It finishes in ⌈log₂N⌉ rounds.</p>
+
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sequential window chain of seven steps compared with a parallel prefix scan of three rounds over eight chunks">
+          <text x="0" y="16" font-family="ui-monospace, monospace" font-size="11.5" fill="var(--hazard)">BASE PAPER — one chunk after another: 7 dependent steps</text>
+          <g font-family="ui-monospace, monospace" font-size="11" text-anchor="middle">
+            <rect x="110" y="32" width="52" height="28" rx="3" fill="var(--hazard-bg)" stroke="var(--hazard)"/><text x="136" y="50" fill="var(--hazard)">W1</text>
+            <rect x="182" y="32" width="52" height="28" rx="3" fill="var(--hazard-bg)" stroke="var(--hazard)"/><text x="208" y="50" fill="var(--hazard)">W2</text>
+            <rect x="254" y="32" width="52" height="28" rx="3" fill="var(--hazard-bg)" stroke="var(--hazard)"/><text x="280" y="50" fill="var(--hazard)">W3</text>
+            <rect x="326" y="32" width="52" height="28" rx="3" fill="var(--hazard-bg)" stroke="var(--hazard)"/><text x="352" y="50" fill="var(--hazard)">W4</text>
+            <rect x="398" y="32" width="52" height="28" rx="3" fill="var(--hazard-bg)" stroke="var(--hazard)"/><text x="424" y="50" fill="var(--hazard)">W5</text>
+            <rect x="470" y="32" width="52" height="28" rx="3" fill="var(--hazard-bg)" stroke="var(--hazard)"/><text x="496" y="50" fill="var(--hazard)">W6</text>
+            <rect x="542" y="32" width="52" height="28" rx="3" fill="var(--hazard-bg)" stroke="var(--hazard)"/><text x="568" y="50" fill="var(--hazard)">W7</text>
+            <rect x="614" y="32" width="52" height="28" rx="3" fill="var(--hazard-bg)" stroke="var(--hazard)"/><text x="640" y="50" fill="var(--hazard)">W8</text>
+          </g>
+          <g stroke="var(--hazard)" stroke-width="1.5" fill="none">
+            <path d="M162 46 L180 46"/><path d="M175 42 L181 46 L175 50"/>
+            <path d="M234 46 L252 46"/><path d="M247 42 L253 46 L247 50"/>
+            <path d="M306 46 L324 46"/><path d="M319 42 L325 46 L319 50"/>
+            <path d="M378 46 L396 46"/><path d="M391 42 L397 46 L391 50"/>
+            <path d="M450 46 L468 46"/><path d="M463 42 L469 46 L463 50"/>
+            <path d="M522 46 L540 46"/><path d="M535 42 L541 46 L535 50"/>
+            <path d="M594 46 L612 46"/><path d="M607 42 L613 46 L607 50"/>
+          </g>
+
+          <text x="0" y="100" font-family="ui-monospace, monospace" font-size="11.5" fill="var(--accent)">OURS — prefix scan: 3 rounds, every combine in a round runs in parallel</text>
+          <g font-family="ui-monospace, monospace" font-size="10.5" fill="var(--ink-soft)">
+            <text x="0" y="135">start</text>
+            <text x="0" y="195">round 1</text>
+            <text x="0" y="255">round 2</text>
+            <text x="0" y="315">round 3</text>
+          </g>
+
+          <!-- vertical carry-through lines -->
+          <g stroke="var(--line)" stroke-width="1.2">
+            <line x1="136" y1="144" x2="136" y2="178"/><line x1="208" y1="144" x2="208" y2="178"/><line x1="280" y1="144" x2="280" y2="178"/><line x1="352" y1="144" x2="352" y2="178"/><line x1="424" y1="144" x2="424" y2="178"/><line x1="496" y1="144" x2="496" y2="178"/><line x1="568" y1="144" x2="568" y2="178"/><line x1="640" y1="144" x2="640" y2="178"/>
+            <line x1="136" y1="204" x2="136" y2="238"/><line x1="208" y1="204" x2="208" y2="238"/><line x1="280" y1="204" x2="280" y2="238"/><line x1="352" y1="204" x2="352" y2="238"/><line x1="424" y1="204" x2="424" y2="238"/><line x1="496" y1="204" x2="496" y2="238"/><line x1="568" y1="204" x2="568" y2="238"/><line x1="640" y1="204" x2="640" y2="238"/>
+            <line x1="136" y1="264" x2="136" y2="298"/><line x1="208" y1="264" x2="208" y2="298"/><line x1="280" y1="264" x2="280" y2="298"/><line x1="352" y1="264" x2="352" y2="298"/><line x1="424" y1="264" x2="424" y2="298"/><line x1="496" y1="264" x2="496" y2="298"/><line x1="568" y1="264" x2="568" y2="298"/><line x1="640" y1="264" x2="640" y2="298"/>
+          </g>
+          <!-- round 1: distance 1 -->
+          <g stroke="var(--accent)" stroke-width="1.4">
+            <line x1="136" y1="144" x2="208" y2="178"/><line x1="208" y1="144" x2="280" y2="178"/><line x1="280" y1="144" x2="352" y2="178"/><line x1="352" y1="144" x2="424" y2="178"/><line x1="424" y1="144" x2="496" y2="178"/><line x1="496" y1="144" x2="568" y2="178"/><line x1="568" y1="144" x2="640" y2="178"/>
+          </g>
+          <!-- round 2: distance 2 -->
+          <g stroke="var(--accent)" stroke-width="1.4">
+            <line x1="136" y1="204" x2="280" y2="238"/><line x1="208" y1="204" x2="352" y2="238"/><line x1="280" y1="204" x2="424" y2="238"/><line x1="352" y1="204" x2="496" y2="238"/><line x1="424" y1="204" x2="568" y2="238"/><line x1="496" y1="204" x2="640" y2="238"/>
+          </g>
+          <!-- round 3: distance 4 -->
+          <g stroke="var(--accent)" stroke-width="1.4">
+            <line x1="136" y1="264" x2="424" y2="298"/><line x1="208" y1="264" x2="496" y2="298"/><line x1="280" y1="264" x2="568" y2="298"/><line x1="352" y1="264" x2="640" y2="298"/>
+          </g>
+          <g font-family="ui-monospace, monospace" font-size="10.5" text-anchor="middle">
+            <g fill="var(--surface)" stroke="var(--accent)">
+              <rect x="114" y="122" width="44" height="22" rx="3"/><rect x="186" y="122" width="44" height="22" rx="3"/><rect x="258" y="122" width="44" height="22" rx="3"/><rect x="330" y="122" width="44" height="22" rx="3"/><rect x="402" y="122" width="44" height="22" rx="3"/><rect x="474" y="122" width="44" height="22" rx="3"/><rect x="546" y="122" width="44" height="22" rx="3"/><rect x="618" y="122" width="44" height="22" rx="3"/>
+              <rect x="114" y="182" width="44" height="22" rx="3"/><rect x="186" y="182" width="44" height="22" rx="3"/><rect x="258" y="182" width="44" height="22" rx="3"/><rect x="330" y="182" width="44" height="22" rx="3"/><rect x="402" y="182" width="44" height="22" rx="3"/><rect x="474" y="182" width="44" height="22" rx="3"/><rect x="546" y="182" width="44" height="22" rx="3"/><rect x="618" y="182" width="44" height="22" rx="3"/>
+              <rect x="114" y="242" width="44" height="22" rx="3"/><rect x="186" y="242" width="44" height="22" rx="3"/><rect x="258" y="242" width="44" height="22" rx="3"/><rect x="330" y="242" width="44" height="22" rx="3"/><rect x="402" y="242" width="44" height="22" rx="3"/><rect x="474" y="242" width="44" height="22" rx="3"/><rect x="546" y="242" width="44" height="22" rx="3"/><rect x="618" y="242" width="44" height="22" rx="3"/>
+            </g>
+            <g fill="var(--accent-bg)" stroke="var(--accent)">
+              <rect x="114" y="302" width="44" height="22" rx="3"/><rect x="186" y="302" width="44" height="22" rx="3"/><rect x="258" y="302" width="44" height="22" rx="3"/><rect x="330" y="302" width="44" height="22" rx="3"/><rect x="402" y="302" width="44" height="22" rx="3"/><rect x="474" y="302" width="44" height="22" rx="3"/><rect x="546" y="302" width="44" height="22" rx="3"/><rect x="618" y="302" width="44" height="22" rx="3"/>
+            </g>
+            <g fill="var(--ink-mid)">
+              <text x="136" y="137">f1</text><text x="208" y="137">f2</text><text x="280" y="137">f3</text><text x="352" y="137">f4</text><text x="424" y="137">f5</text><text x="496" y="137">f6</text><text x="568" y="137">f7</text><text x="640" y="137">f8</text>
+            </g>
+            <g fill="var(--accent-ink)" font-weight="700">
+              <text x="136" y="317">W1</text><text x="208" y="317">W2</text><text x="280" y="317">W3</text><text x="352" y="317">W4</text><text x="424" y="317">W5</text><text x="496" y="317">W6</text><text x="568" y="317">W7</text><text x="640" y="317">W8</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <figcaption>Eight chunks. Top: the base paper resolves windows in a chain, so window 8 must wait for 7 steps. Bottom: our scan combines each map with the one 1, then 2, then 4 positions earlier. After 3 rounds every window is known, and every combine within a round can run on a different core.</figcaption>
+    </figure>
+
+    <h3>5. Work versus span</h3>
+    <p><strong>Work</strong> is the total number of operations; <strong>span</strong> is the longest chain of operations that must happen one after another. The scan does a little more total work than the chain, but its span is far shorter, and with many cores span is what limits speed. This is Amdahl's law: the serial part of a program sets an upper bound on speedup however many cores you add. In the real implementation we use a work-efficient scan (Blelloch's), which keeps total work proportional to the chain's.</p>
+  </section>
+
+  <!-- ===================================================== 04 -->
+  <section id="journey">
+    <span class="secnum">04</span>
+    <h2>What we have done so far</h2>
+    <p class="dek">In order, including the two times we changed direction and why.</p>
+
+    <ol class="timeline">
+      <li><span class="when">August</span><div><h4>Problem statement (Component 1)</h4><p>Wrote and presented the one-page IEEE introduction: problem, background, gap, beneficiaries, novelty, evaluation and expected contributions.</p></div></li>
+      <li><span class="when">Early Oct</span><div><h4>Methodology drafts and a first pilot</h4><p>Built the methodology report and filled both course slide templates. Wrote a gzip decoder from scratch in Python that records every block, and checked it against <code>zlib</code> on four small files from our own machine.</p></div></li>
+      <li><span class="when">Early Oct</span><div><h4>First correction: load balance was overstated</h4><p>Our first framing led with work-sized chunking (M1). Modelling it honestly showed that rapidgzip's thread pool already hides most imbalance, so M1 could not be the headline.</p></div></li>
+      <li><span class="when">7 Oct</span><div><h4>Base paper read in full; novelty re-anchored</h4><p>Read the whole rapidgzip paper and its changelog up to v0.16.0. Found that the paper itself calls window propagation unparallelisable and blames its scaling limit on it, and that nothing in the released software parallelises it. That became our primary contribution, M3. We also found that parallel CRC32 checking already exists, so we dropped it from our claims.</p></div></li>
+      <li><span class="when">7 Oct</span><div><h4>M3 prototype</h4><p>Wrote a two-stage decoder that decodes chunks without their earlier data, then resolves the windows both one-by-one and by scan. Both gave identical windows, and the output matched <code>zlib</code> exactly.</p></div></li>
+      <li><span class="when">7 Oct</span><div><h4>Moved everything onto Silesia</h4><p>Replaced the homemade test files with the Silesia corpus, the benchmark the base paper uses. Re-ran the profiler, the prototype at the base paper's 4 MiB chunks and at 512 KiB, and the M1 model. Updated the report and both decks.</p></div></li>
+      <li><span class="when">7 Oct</span><div><h4>Second correction: the size of M3's effect is unproven</h4><p>The Silesia numbers showed the window chain is a small share of total work by pure arithmetic. M3 is still correct and new, but how much speedup it gives depends on what the step really costs inside rapidgzip. We removed a claim that our hardware would show the effect at 8–16 cores, and made timing that step the first implementation task.</p></div></li>
+    </ol>
+
+    <div class="note">
+      <span class="label">Why the corrections are a strength</span>
+      <p>Both times we changed direction because our own measurements contradicted a claim, before anyone else caught it. Say this plainly if asked. Examiners trust a team that tests its own claims far more than a team with no visible weak points.</p>
+    </div>
+
+    <h3>Deliverables produced</h3>
+    <ul class="plain">
+      <li><strong>Methodology report</strong> — <code>riptide_methodology.tex</code>, IEEE format, the rubric's three subsections, four references.</li>
+      <li><strong>Methodology presentation</strong> — <code>riptide_methodology_presentation_v4.pptx</code>, four slides on the course template.</li>
+      <li><strong>Final presentation (draft)</strong> — <code>riptide_final_presentation.pptx</code>, eight slides; results cells marked "To measure" until implementation.</li>
+      <li><strong>This guide.</strong></li>
+    </ul>
+  </section>
+
+  <!-- ===================================================== 05 -->
+  <section id="meth">
+    <span class="secnum">05</span>
+    <h2>Methodology presentation, slide by slide</h2>
+    <p class="dek">Four slides, ten minutes plus five for questions. This is the deck being graded now.</p>
+
+    <div class="slide">
+      <div class="slide-head"><span class="slide-no">Slide 1</span><h4>Title</h4></div>
+      <dl>
+        <div><dt>On the slide</dt><dd>NIT Karnataka logo, "Methodology Presentation", <strong>Riptide</strong> with the full title, the four of us with roll numbers, and the course.</dd></div>
+        <div><dt>Say this</dt><dd><p class="say">"We are Riptide. Our base paper, rapidgzip, already decompresses gzip files in parallel, but it leaves one step serial: passing the 32 KB windows from one chunk to the next. Our project parallelises that step."</p></dd></div>
+      </dl>
+    </div>
+
+    <div class="slide">
+      <div class="slide-head"><span class="slide-no">Slide 2</span><h4>Dataset</h4></div>
+      <dl>
+        <div><dt>On the slide</dt><dd>
+          <ul>
+            <li>Three lines defining the data: unmodified <code>.gz</code> files, with <code>zlib</code>'s output as ground truth; the sources; and what one instance and its features are.</li>
+            <li>A table of the 12 Silesia files: compressed and decompressed size, ratio, number of blocks, and expansion ρ.</li>
+            <li>A snapshot of five raw block records at the point in the tarball where the chemical database (nci) ends and the office DLLs (ooffice) begin.</li>
+          </ul>
+        </dd></div>
+        <div><dt>What it means</dt><dd>
+          <p>This is not a training dataset: there are no labels. The "correct answer" for every file is what <code>zlib</code> produces, and we must match it byte for byte.</p>
+          <p>Silesia is the benchmark the base paper uses, so our numbers are directly comparable to theirs. Our tarball expands 3.11×, against the 3.1× the paper reports, which shows our setup matches.</p>
+          <p>ρ (rho) is how much a block grows when decompressed. The snapshot shows blocks of almost the same compressed size producing 255 KB of output on one side and 41 KB on the other. A chunk cut by compressed size can therefore need about six times more memory than its neighbour.</p>
+        </dd></div>
+        <div><dt>Say this</dt><dd><p class="say">"Our data is the Silesia corpus, the same benchmark the base paper uses. Our own decoder reproduces zlib exactly on all twelve files and on the tarball. The snapshot shows why chunk size matters: similar compressed size, six times less output on the right."</p></dd></div>
+        <div><dt>If asked</dt><dd><strong>Why not FASTQ or logs?</strong> They're planned; Silesia comes first because it's the base paper's own benchmark. <strong>Did you make this data?</strong> No, it's public, downloaded from its maintainer. We only compressed it with standard gzip.</dd></div>
+      </dl>
+    </div>
+
+    <div class="slide">
+      <div class="slide-head"><span class="slide-no">Slide 3</span><h4>Methodology block diagram</h4></div>
+      <dl>
+        <div><dt>On the slide</dt><dd>A two-row pipeline. Amber stages are ours; blue stages are inherited from the base paper. Below it, three cards compare each of our contributions with the base paper.</dd></div>
+        <div><dt>The stages</dt><dd>
+          <ol class="stages">
+            <li><span class="n">0</span><span><strong>Cost estimate.</strong> Read a few block headers to guess where the heavy work is. Cheap, and not a full pass over the file.</span></li>
+            <li><span class="n ours">1</span><span><strong>Work-sized chunking (M1).</strong> Cut the file into chunks of similar estimated work, not similar compressed size. Oversized chunks are split and sent back to the thread pool (the dashed arrow).</span></li>
+            <li><span class="n">2</span><span><strong>Speculative boundary search.</strong> Each thread looks for where a DEFLATE block starts inside its chunk. Inherited.</span></li>
+            <li><span class="n">3</span><span><strong>Entry-point certification.</strong> Confirm the guessed start is real, because a wrong start silently produces garbage. Inherited.</span></li>
+            <li><span class="n ours">4</span><span><strong>Parallel parse, span placeholders (M2).</strong> Every thread decodes its chunk at once, writing markers for unknown bytes. M2 stores those as compact runs instead of widening every byte.</span></li>
+            <li><span class="n ours">5</span><span><strong>Log-depth window resolution (M3, primary).</strong> The prefix scan from section 03.</span></li>
+            <li><span class="n">6</span><span><strong>Parallel materialisation.</strong> Replace markers with real bytes in every chunk at once. Inherited.</span></li>
+            <li><span class="n">7</span><span><strong>CRC32 verification.</strong> Check the gzip file's own checksum. Inherited; the base paper's software already does this in parallel.</span></li>
+          </ol>
+        </dd></div>
+        <div><dt>The three cards</dt><dd>
+          <ul>
+            <li><strong>M3 (primary):</strong> the base paper resolves windows one after another, calls that step unparallelisable, and attributes its 48–64-core limit to it. We use a prefix scan.</li>
+            <li><strong>M1:</strong> the base paper cuts chunks by compressed size, balances by output size only when an index already exists, and its software serialises chunks above about 20× compression. We split those chunks across idle threads instead.</li>
+            <li><strong>M2 (supporting):</strong> the base paper holds unresolved bytes at 16 bits until a chunk's window is free of markers. We keep output at 8 bits and record unresolved runs separately.</li>
+          </ul>
+        </dd></div>
+        <div><dt>Say this</dt><dd><p class="say">"Reading compressed bits doesn't need earlier output; only copying does. So every chunk decodes in parallel and leaves markers. Each chunk's final window is then a map from the previous window. Combining those maps is associative, so the chain the base paper resolves one step at a time is a prefix scan: log N rounds instead of N steps."</p></dd></div>
+        <div><dt>If asked</dt><dd><strong>Which parts are yours?</strong> Only the amber ones; everything blue is inherited and credited.</dd></div>
+      </dl>
+    </div>
+
+    <div class="slide">
+      <div class="slide-head"><span class="slide-no">Slide 4</span><h4>Evaluation metrics and expected analysis</h4></div>
+      <dl>
+        <div><dt>On the slide</dt><dd>
+          <ul>
+            <li>A table with one metric per objective: correctness, resolution (M3), speed, cold start, overhead, load balance (M1) and memory (M2).</li>
+            <li>A box explaining why these metrics are enough, with baselines, repetitions, the statistical test and the ablation.</li>
+            <li>A chart of the M3 prototype on Silesia: 16 sequential steps become 5 scan rounds at 4 MiB chunks, and 130 become 8 at 512 KiB.</li>
+            <li>Three expected results.</li>
+          </ul>
+        </dd></div>
+        <div><dt>What it means</dt><dd>
+          <p><strong>Correctness is a gate:</strong> if the output differs from <code>zlib</code> by a single byte, no speed number counts.</p>
+          <p><strong>Cold start</strong> times the first-ever read of a file, including our cost estimate, so M1 cannot hide its own overhead. <strong>Overhead</strong> compares our 1-thread time with igzip, the fastest sequential decoder, so our speedup isn't measured against a slow baseline we chose ourselves.</p>
+          <p><strong>The chart shows depth, not time.</strong> It proves the scan reaches exactly the same result in far fewer dependent steps. It does not yet show a speedup.</p>
+          <p><strong>Statistics:</strong> 10 runs per setting, medians, and the Wilcoxon signed-rank test, which compares paired timings without assuming they are normally distributed.</p>
+        </dd></div>
+        <div><dt>Say this</dt><dd><p class="say">"Correctness first: byte-identical or it fails. Then one metric per contribution. The chart is our prototype on Silesia: the same windows, bit-identical output, in log N rounds. That's depth, not time. Before claiming a speedup we will time the serial step inside rapidgzip itself."</p></dd></div>
+        <div><dt>If asked</dt><dd><strong>Isn't 16 → 5 just log₂?</strong> Yes: the counts follow from the algorithm. The real evidence is that the scan gives <em>identical</em> results on real data. <strong>What is the oracle λ?</strong> A simulation that assumes we know each block's true cost exactly, so it is an upper bound on M1's gain.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ===================================================== 06 -->
+  <section id="final">
+    <span class="secnum">06</span>
+    <h2>Final presentation, slide by slide</h2>
+    <p class="dek">A draft for Component 3. Its structure is final; its results fill in after implementation.</p>
+
+    <div class="slide">
+      <div class="slide-head"><span class="slide-no">Slides 1–3</span><h4>Title, problem statement, block diagram</h4></div>
+      <dl>
+        <div><dt>On the slides</dt><dd>
+          <p>The title and block diagram are the same as in the methodology deck.</p>
+          <p>The problem statement slide has four points on the left: one core per file; big-data engines can't split <code>.gz</code> files; rapidgzip leaves one step serial; and our aim. On the right is a stakeholder table: data engineers, bioinformatics labs, DevOps teams and archive hosts, each with how they benefit.</p>
+        </dd></div>
+        <div><dt>Say this</dt><dd><p class="say">"Spark gives a 10 GB gzip file exactly one task, however big the cluster. Rapidgzip fixed most of that, but its windows are still resolved one after another. That serial step is what we remove, for everyone who has to read gzip data they can't re-encode."</p></dd></div>
+      </dl>
+    </div>
+
+    <div class="slide">
+      <div class="slide-head"><span class="slide-no">Slide 4</span><h4>Results 1/3 — Silesia corpus profile</h4></div>
+      <dl>
+        <div><dt>On the slide</dt><dd>Three headline numbers: 13 of 13 streams bit-identical to <code>zlib</code>; 2,811 blocks in the tarball; ratio 3.11 (the paper reports 3.1). Below them, the full 12-file table, including match distances and the share of literals, and two observations.</dd></div>
+        <div><dt>What it means</dt><dd>Our tooling is correct and our data matches the base paper's. Expansion varies 7.7× inside one archive: nci expands 10.48×, sao only 1.36×.</dd></div>
+      </dl>
+    </div>
+
+    <div class="slide">
+      <div class="slide-head"><span class="slide-no">Slide 5</span><h4>Results 2/3 — Parallel window resolution (M3)</h4></div>
+      <dl>
+        <div><dt>On the slide</dt><dd>The steps-versus-rounds chart and five findings: exact at real scale; depth grows with log₂N; smaller chunks lengthen the chain; the chain is small in absolute terms; and the supporting M2 and M1 numbers.</dd></div>
+        <div><dt>What it means</dt><dd>
+          <p>At the base paper's own 4 MiB chunks, only 19% of chunk windows still contain markers when the chunk ends. At 512 KiB that rises to 68%, and the chain's share of marker-resolution work rises from 0.25% to 2.0%.</p>
+          <p>The honest part: even at 512 KiB the chain is about 0.2% of total work, because the base paper reports that resolving markers is roughly ten times cheaper than decoding. That is why timing the step inside rapidgzip comes first.</p>
+        </dd></div>
+        <div><dt>Say this</dt><dd><p class="say">"At the base paper's own chunk size, the scan resolves Silesia's windows exactly, in 5 rounds instead of 16. In pure work the chain is small, so how much speedup this buys is the first thing we measure, and we only claim a number after measuring it."</p></dd></div>
+      </dl>
+    </div>
+
+    <div class="slide">
+      <div class="slide-head"><span class="slide-no">Slide 6</span><h4>Results 3/3 — Comparison with the state of the art</h4></div>
+      <dl>
+        <div><dt>On the slide</dt><dd>A table comparing zlib, igzip, pigz, rapidgzip and Riptide. Amber cells say "To measure". The "Window depth" column shows rapidgzip as N−1 and serial, and Riptide as log₂N. A caption quotes the base paper's published numbers: 5.6 GB/s on Silesia and 8.7 GB/s on base64 with 128 cores.</dd></div>
+        <div><dt>What it means</dt><dd>Nothing on this slide is invented. Every amber cell is filled only after it's measured, against rapidgzip built from the same code we modify.</dd></div>
+      </dl>
+    </div>
+
+    <div class="slide">
+      <div class="slide-head"><span class="slide-no">Slides 7–8</span><h4>What we have achieved · Conclusion</h4></div>
+      <dl>
+        <div><dt>On the slides</dt><dd>
+          <p>Slide 7 lists what's achieved: the M3 prototype on Silesia, the reference decoder, the novelty check against the paper and changelog, and the limits we found early. It also gives the use case (a fork of rapidgzip usable from the command line or as a library, and a gzip input codec for Spark) and the deployment status (not yet deployed).</p>
+          <p>Slide 8 gives four conclusions and a status list: two items done, three next.</p>
+        </dd></div>
+        <div><dt>Note</dt><dd>Update these two slides after implementation. The "Next" items become "Done", and the conclusion should state the measured speedup.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ===================================================== 07 -->
+  <section id="numbers">
+    <span class="secnum">07</span>
+    <h2>Every number and where it comes from</h2>
+    <p class="dek"><span class="tag m">Measured</span> by our code on real data. <span class="tag e">Estimated</span> by a model with stated assumptions. <span class="tag p">Published</span> by the base paper.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Number</th><th>Meaning</th><th>Type</th></tr></thead>
+        <tbody>
+          <tr><td>212 MB → 68.2 MB</td><td>Silesia corpus, and as our gzipped tarball</td><td><span class="tag m">Measured</span></td></tr>
+          <tr><td>3.11</td><td>Tarball expansion ratio; the paper reports 3.1</td><td><span class="tag m">Measured</span></td></tr>
+          <tr><td>13 / 13</td><td>12 files plus the tarball decoded bit-identically to zlib</td><td><span class="tag m">Measured</span></td></tr>
+          <tr><td>2,811</td><td>DEFLATE blocks in the tarball</td><td><span class="tag m">Measured</span></td></tr>
+          <tr><td>1.36 to 10.48</td><td>Lowest (sao) and highest (nci) file ratios</td><td><span class="tag m">Measured</span></td></tr>
+          <tr><td>255 KB → 41 KB</td><td>Output of similar-sized blocks either side of nci → ooffice</td><td><span class="tag m">Measured</span></td></tr>
+          <tr><td>16 → 5, 130 → 8</td><td>Sequential steps vs scan rounds at 4 MiB (17 chunks) and 512 KiB (131 chunks)</td><td><span class="tag m">Measured</span></td></tr>
+          <tr><td>19% → 68%</td><td>Chunk windows still unresolved, 4 MiB vs 512 KiB</td><td><span class="tag m">Measured</span></td></tr>
+          <tr><td>39% → 78%</td><td>Share of each chunk held in 16-bit form (M2's target)</td><td><span class="tag m">Measured</span></td></tr>
+          <tr><td>0.25% → 2.0%</td><td>Serial chain's share of marker-resolution work</td><td><span class="tag m">Measured</span></td></tr>
+          <tr><td>about 0.2%</td><td>Chain's share of total work at 512 KiB, assuming resolution costs a tenth of decoding</td><td><span class="tag e">Estimated</span></td></tr>
+          <tr><td>λ 1.16 vs 1.00</td><td>Load imbalance, compressed-size vs work-sized chunks, 8 workers, 4 chunks each, oracle model</td><td><span class="tag e">Estimated</span></td></tr>
+          <tr><td>λ 1.20 vs 1.01</td><td>Same with 16 workers</td><td><span class="tag e">Estimated</span></td></tr>
+          <tr><td>5.6 / 8.7 GB/s</td><td>Rapidgzip on Silesia / base64, 128 cores, no index</td><td><span class="tag p">Published</span></td></tr>
+          <tr><td>≈64 and 48 cores</td><td>Where rapidgzip stops scaling without an index, on Silesia and on FASTQ</td><td><span class="tag p">Published</span></td></tr>
+          <tr><td>4 MiB</td><td>Rapidgzip's default chunk size</td><td><span class="tag p">Published</span></td></tr>
+          <tr><td>~20×</td><td>Compression ratio above which rapidgzip's software serialises a chunk (changelog v0.6.0)</td><td><span class="tag p">Published</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>No speed, throughput or speedup number of <em>ours</em> exists yet. Every such cell on the slides says "To measure".</p>
+  </section>
+
+  <!-- ===================================================== 08 -->
+  <section id="limits">
+    <span class="secnum">08</span>
+    <h2>Honest limits and later work</h2>
+    <p class="dek">Know these before an examiner raises them.</p>
+
+    <ul class="plain">
+      <li><strong>M3's speedup is unproven.</strong> The scan is correct and new, but by pure arithmetic the chain is small. Either the step costs much more inside rapidgzip than a 32 KB lookup (waiting for chunks in order, coordination on its main thread), or the paper's plateau has other causes too. Timing it is our first implementation task.</li>
+      <li><strong>The step counts are arithmetic.</strong> N−1 against log₂N follows from the algorithm. What our prototype proves is that the scan is <em>exact</em> on real data.</li>
+      <li><strong>M1's gain is modest on Silesia</strong> (λ 1.16 against 1.00 with 8 workers), and it's an oracle upper bound. If real measurements show compressed-size chunks already balance, we report M1 as a negative result.</li>
+      <li><strong>Our decoder is a Python prototype</strong>, built to measure structure and check correctness, not for speed. The real implementation is a C++ fork of rapidgzip.</li>
+      <li><strong>The dataset isn't finished.</strong> FASTQ reads, logs, high-ratio files and synthetic edge cases are planned.</li>
+    </ul>
+
+    <h3>Later work, in order</h3>
+    <ol class="stages">
+      <li><span class="n">1</span><span>Build rapidgzip from source and time its serial window step on Silesia at 4 MiB and 512 KiB chunks.</span></li>
+      <li><span class="n">2</span><span>Implement M3 (a work-efficient scan) in the fork, keeping output bit-identical.</span></li>
+      <li><span class="n">3</span><span>Implement M1's parallel splitting, then M2 if time allows.</span></li>
+      <li><span class="n">4</span><span>Run the benchmarks: thread counts, chunk sizes, cold and warm cache, 10 runs each, plus the ablation.</span></li>
+      <li><span class="n">5</span><span>Fill the final deck's amber cells and update its last two slides.</span></li>
+    </ol>
+  </section>
+
+  <!-- ===================================================== 09 -->
+  <section id="qa">
+    <span class="secnum">09</span>
+    <h2>Questions to expect in the viva</h2>
+    <p class="dek">Each of us should be able to answer every one of these.</p>
+
+    <div class="qa">
+      <div class="q">
+        <h4>What is your base paper, and what does it already do?</h4>
+        <p>Rapidgzip, HPDC 2023. It decompresses ordinary gzip files in parallel: threads decode chunks without the earlier data, leave markers, and fill them in once that data is known. It reaches 5.6 GB/s on Silesia with 128 cores.</p>
+      </div>
+      <div class="q">
+        <h4>What exactly is new in your work?</h4>
+        <p>Resolving the windows between chunks with a parallel prefix scan. The base paper says this step cannot be parallelised and resolves it one chunk at a time. We checked its changelog up to the latest version, and no release parallelises it.</p>
+      </div>
+      <div class="q">
+        <h4>Why does a scan work here?</h4>
+        <p>Each chunk's final window is a map from the previous window: every entry is a known byte or a pointer into it. Combining two such maps gives another map of the same kind, and combining is associative. Any "combine everything before me" problem with an associative operator is a prefix scan, which takes log₂N rounds.</p>
+      </div>
+      <div class="q">
+        <h4>Doesn't the scan do more work than the simple chain?</h4>
+        <p>A naive scan does. We use Blelloch's work-efficient scan, which keeps total work proportional to the chain's while cutting the span from N steps to about log₂N. With many cores, span is what limits speed.</p>
+      </div>
+      <div class="q">
+        <h4>Is that chain really the bottleneck?</h4>
+        <p>The base paper says so. Our arithmetic says the chain is a small share of the work, so it may not be the whole story. That's exactly why our first implementation step is to time it inside rapidgzip, and why we haven't claimed a speedup yet.</p>
+      </div>
+      <div class="q">
+        <h4>How do you know your decoder is correct?</h4>
+        <p>Every output is compared byte for byte with <code>zlib</code>, the reference implementation, and every gzip file's own CRC32 checksum is verified. All 13 Silesia streams match.</p>
+      </div>
+      <div class="q">
+        <h4>Why Silesia?</h4>
+        <p>It's the standard compression benchmark and the one the base paper uses, so our numbers are comparable to theirs. Our tarball even reproduces the paper's 3.1 compression ratio.</p>
+      </div>
+      <div class="q">
+        <h4>What is λ, and why do you call it an oracle?</h4>
+        <p>λ is the slowest worker's time divided by the average; 1.0 means perfectly balanced. The model assumes we know every block's true cost in advance, which a real system can't, so it is an upper bound on what M1 can achieve.</p>
+      </div>
+      <div class="q">
+        <h4>Rapidgzip already switches to 8-bit output. What does M2 add?</h4>
+        <p>It does, once a chunk's window has no markers left. On Silesia with 512 KiB chunks, 78% of each chunk comes before that point, so the widened form dominates exactly when chunks are made small to save memory. M2 is labelled supporting for that reason.</p>
+      </div>
+      <div class="q">
+        <h4>What if M3 gives no measurable speedup?</h4>
+        <p>Then we report it honestly, with the measurement showing where the time actually goes, and the result still explains the base paper's scaling limit. M1 and M2 remain as separate contributions.</p>
+      </div>
+      <div class="q">
+        <h4>Why not just switch to a better format like zstd?</h4>
+        <p>Because the data already exists as gzip: logs, genomics archives, datasets. Converting it means decompressing it first, which is the slow step we're fixing.</p>
+      </div>
+      <div class="q">
+        <h4>What happened to the GPU idea?</h4>
+        <p>The multicore CPU decoder comes first; a GPU version would be a feasibility study afterwards. Our contribution doesn't depend on it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== 10 -->
+  <section id="files">
+    <span class="secnum">10</span>
+    <h2>Files and how to reproduce</h2>
+    <p class="dek">Anyone on the team can regenerate every measured number.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Path</th><th>What it is</th></tr></thead>
+        <tbody>
+          <tr><td><code>riptide_methodology.tex</code></td><td>Methodology report (compile on Overleaf)</td></tr>
+          <tr><td><code>riptide_methodology_presentation_v4.pptx</code></td><td>Methodology presentation</td></tr>
+          <tr><td><code>riptide_final_presentation.pptx</code></td><td>Final presentation draft</td></tr>
+          <tr><td><code>pilot/profiler.py</code></td><td>Our gzip decoder; records every block and checks against zlib</td></tr>
+          <tr><td><code>pilot/window_scan.py</code></td><td>Two-stage decoding and the sequential-versus-scan window resolution (M3 prototype)</td></tr>
+          <tr><td><code>pilot/silesia_run.py</code></td><td>Runs both on Silesia</td></tr>
+          <tr><td><code>pilot/analyze.py</code>, <code>scheduling.py</code></td><td>Statistics and the M1 load-balance model</td></tr>
+          <tr><td><code>pilot/silesia/</code></td><td>The corpus, the gzipped files and tarball, and the results as JSON</td></tr>
+          <tr><td><code>build/</code></td><td>Scripts that generate the slides from the data</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The scripts need Python 3 with <code>numpy</code>. From the <code>pilot</code> folder, profile the corpus:</p>
+<pre>python3 silesia_run.py profile</pre>
+    <p>Then run the M3 prototype at 4 MiB and 512 KiB chunks:</p>
+<pre>python3 silesia_run.py scan 4096 512</pre>
+    <p>Each takes under a minute on a laptop.</p>
+  </section>
+
+  <!-- ===================================================== 11 -->
+  <section id="gloss">
+    <span class="secnum">11</span>
+    <h2>Glossary</h2>
+    <p class="dek">Define each of these without hesitating.</p>
+    <dl class="gloss">
+      <div><dt>DEFLATE</dt><dd>The compression method inside gzip, ZIP and PNG. Data is split into blocks.</dd></div>
+      <div><dt>Back-reference</dt><dd>An instruction to copy bytes from up to 32 KB earlier in the output.</dd></div>
+      <div><dt>Window</dt><dd>The last 32 KB of decoded output, which back-references can point into.</dd></div>
+      <div><dt>Marker</dt><dd>A placeholder for a byte whose value isn't known yet because it's in the previous chunk's window.</dd></div>
+      <div><dt>Two-stage decoding</dt><dd>Decode with markers first, fill them in later. From pugz; used by rapidgzip.</dd></div>
+      <div><dt>Chunk</dt><dd>The piece of the compressed file one thread decodes. Rapidgzip's default is 4 MiB.</dd></div>
+      <div><dt>Window chain</dt><dd>Each chunk's window depends on the previous one. Resolved one by one in the base paper.</dd></div>
+      <div><dt>Prefix scan</dt><dd>A parallel algorithm that computes every running combination of a sequence in log₂N rounds, if the combining operation is associative.</dd></div>
+      <div><dt>Associative</dt><dd>(a∘b)∘c = a∘(b∘c): the grouping doesn't change the result.</dd></div>
+      <div><dt>Work / span</dt><dd>Total operations / the longest chain that must run one after another.</dd></div>
+      <div><dt>Amdahl's law</dt><dd>The serial part of a program caps its speedup, however many cores you add.</dd></div>
+      <div><dt>ρ (rho)</dt><dd>Expansion ratio of a block: output bytes divided by input bytes.</dd></div>
+      <div><dt>λ (lambda)</dt><dd>Load imbalance: slowest worker's time divided by the average. 1.0 is perfect.</dd></div>
+      <div><dt>Oracle model</dt><dd>A simulation that assumes perfect knowledge, giving an upper bound.</dd></div>
+      <div><dt>Bit-identical</dt><dd>Our output equals zlib's byte for byte. Non-negotiable.</dd></div>
+      <div><dt>CRC32</dt><dd>The checksum stored in every gzip file, used to verify the whole output.</dd></div>
+      <div><dt>Silesia corpus</dt><dd>A standard 212 MB compression benchmark; the base paper's test data.</dd></div>
+    </dl>
+  </section>
+
+  <footer>
+    <p>Riptide · IT 301 Parallel Computing · Dept. of Information Technology, NIT Karnataka, Surathkal. Measured numbers come from our scripts on the Silesia corpus; published numbers are cited from Knespel and Brunst, HPDC '23, and the rapidgzip changelog. No speed results of ours exist yet.</p>
+  </footer>
+
+</div>
