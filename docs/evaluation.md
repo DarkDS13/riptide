@@ -79,6 +79,56 @@ methodology does not apply. p-values are Holm–Bonferroni corrected over all
 comparisons of an experiment, and effects are reported as the ratio of medians. With
 10 repetitions per side the smallest attainable two-sided p-value is about 1.1 × 10⁻⁵.
 
+## Findings
+
+All numbers are medians of 10 runs from `results/summary.md`.
+
+1. **Correctness.** 1200 of 1200 timed runs are byte-identical to zlib.
+2. **Scaling.** With 10 threads and 4 MiB chunks Riptide decodes Silesia × 5 at
+   2.94 GB/s: 3.2× its own single-thread time, 4.4× the sequential decoder and 2.4×
+   zlib. FASTQ reaches 2.50 GB/s (1.5× zlib) and the mixed archive 3.55 GB/s (1.6×).
+   On the 23× log file Riptide reaches 5.1 GB/s but zlib, whose work there is mostly
+   long memory copies, reaches 6.4 GB/s. Efficiency falls to about 0.3 at 10 threads;
+   the six efficiency cores contribute less than the four performance cores, and the
+   two-stage scheme costs a marker-replacement pass that the sequential decoder does
+   not need.
+3. **M3, window resolution.** The blocked scan resolves the windows 2.7–3.9× faster
+   than the serial chain at every chunk size on Silesia × 5 (all p < 0.001 after Holm
+   correction). Whether that matters depends on how many chunks there are. At 64 KiB
+   (5 205 chunks) the serial chain is 20% of the run and the scan cuts total time from
+   1.35 s to 1.14 s (1.19×). From 1 MiB up the chain is below 2% of the run and total
+   time does not change measurably. With 64 KiB chunks the serial chain's cost stays at
+   190–280 ms whatever the thread count, while the scan's falls from 230 ms with 2
+   threads to 88 ms with 10; with one thread the scan is 2× slower, as its work is
+   twice the chain's.
+4. **Why small chunks.** Small chunks need less memory (E5: peak 1.9 GB instead of
+   2.3 GB on Silesia × 5 at 512 KiB rather than 4 MiB, and 2.1 GB instead of 3.2 GB on
+   the logs). The serial window chain is what makes small chunks expensive in the base
+   paper's design; M3 removes most of that cost.
+5. **M1, split-on-overflow.** Under a 4× output budget with 16 MiB chunks, the log file
+   has three chunks for ten threads, and the serial policy turns each into a chain of
+   continuations: λ = 5.6. Splitting brings λ to 1.3 and total time from 453 ms to
+   318 ms (1.43×, p = 0.006). With many chunks per thread it gains nothing and costs up
+   to 13% for the extra speculative searches; on Silesia the budget is rarely reached.
+6. **M1, work-balanced chunking: negative.** Sampling headers adds 30–85 ms and the
+   decode stage does not get faster: λ on the mixed archive drops from 1.56 to 1.35,
+   but the busiest worker's time is set by individual large chunks, not by the plan.
+   With 4 MiB chunks there are enough chunks for work stealing to balance them.
+
+## Threats to validity
+
+- Configurations run one after another, not interleaved, on a fanless laptop, so
+  slow drifts (temperature, background activity) can shift whole configurations. The
+  same configuration measured in E1 and in E4 differs by up to 25% for the log file.
+  Stage times measured inside one run, such as the window step, are not affected;
+  comparisons of total time between configurations are, which is why small total-time
+  differences (for example 0.91× for blocked resolution at 1 MiB, where the window step
+  itself is 1 ms) are not interpreted.
+- One machine. The heterogeneous cores make efficiency look worse than on a server.
+- Three of the five datasets are synthetic. They are seeded and reproducible, but their
+  statistics are ours, not a real sequencer's or service's.
+- rapidgzip itself was not run; comparisons with it use the numbers in its paper.
+
 ## Reproducing
 
 ```bash
@@ -90,4 +140,4 @@ bench/run_benchmarks.sh build ~/riptide-data results 10
 python3 bench/analyze.py results
 ```
 
-The full suite takes about 25 minutes on the machine above.
+The full suite takes about 20 minutes on the machine above.
