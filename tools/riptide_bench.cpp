@@ -1,17 +1,20 @@
 // riptide_bench: repeatable in-process benchmarks of riptide against baselines.
 //
 // Every configuration in the cross product of the given lists is run `--warmup`
-// times unmeasured and `--repetitions` times measured. Each measured run is checked
-// byte for byte against zlib's output and written as one CSV row, so that the
-// analysis scripts can compute medians, IQRs and paired statistical tests.
+// times unmeasured and `--repetitions` times measured, with repetitions interleaved
+// across configurations. Each measured run is checked byte for byte against zlib's
+// output and written as one CSV row, from which bench/analyze.py computes medians,
+// IQRs and significance tests.
 
 #include <zlib.h>
 
 #include <cstdio>
 #include <cstring>
 #include <exception>
+#include <functional>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -222,35 +225,34 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "%s: %zu -> %zu bytes\n", path.c_str(), input.bytes().size(),
                          reference.size());
 
-            auto measure = [&](Row row, auto&& run) {
-                for (std::size_t r = 0; r < args.warmup + args.repetitions; ++r) {
+            struct Configuration {
+                Row row;
+                std::function<Row(Row)> run;  ///< One timed run, returning the completed row.
+            };
+            // Wraps a decompression in timing, the comparison with zlib's output and
+            // the decompressor's statistics.
+            auto timed = [&](auto&& decompress) {
+                return [&reference, decompress](Row row) {
                     const riptide::Stopwatch timer;
-                    auto [data, statistics] = run();
+                    auto [data, statistics] = decompress();
                     row.seconds = timer.seconds();
-                    if (r < args.warmup) {
-                        continue;
-                    }
                     const auto bytes = view_of(data);
-                    row.repetition = r - args.warmup;
                     row.output_bytes = bytes.size();
                     row.identical = same(bytes, reference);
-                    row.statistics = statistics;
-                    write_row(out, row);
-                }
+                    row.statistics = std::move(statistics);
+                    return row;
+                };
             };
 
+            std::vector<Configuration> configurations;
             if (args.baselines) {
-                Row row{base_name(path), "zlib"};
-                measure(row, [&] {
-                    auto data = zlib_decompress(input.bytes());
-                    return std::pair{std::vector<std::uint8_t>(std::move(data)), std::string("{}")};
-                });
-                row.engine = "riptide-sequential";
-                measure(row, [&] {
+                configurations.push_back({Row{base_name(path), "zlib"}, timed([&input] {
+                    return std::pair{zlib_decompress(input.bytes()), std::string("{}")};
+                })});
+                configurations.push_back({Row{base_name(path), "riptide-sequential"}, timed([&input] {
                     return std::pair{riptide::decompress_sequential(input.bytes()), std::string("{}")};
-                });
+                })});
             }
-
             for (const std::size_t threads : args.threads) {
                 for (const std::size_t chunk_size : args.chunk_sizes) {
                     for (const auto window : args.windows) {
@@ -263,20 +265,39 @@ int main(int argc, char** argv) {
                                 options.chunking = chunking;
                                 options.overflow = overflow;
                                 options.max_expansion = args.max_expansion;
-                                riptide::ParallelDecompressor decompressor(options);
-
                                 Row row{base_name(path), "riptide", threads, chunk_size,
                                         std::string(riptide::to_string(window)),
                                         std::string(riptide::to_string(chunking)),
                                         std::string(riptide::to_string(overflow))};
-                                measure(row, [&] {
-                                    auto result = decompressor.decompress(input.bytes());
+                                // The pool is started outside the timed region.
+                                auto decompressor =
+                                    std::make_shared<riptide::ParallelDecompressor>(options);
+                                configurations.push_back({row, timed([&input, decompressor] {
+                                    auto result = decompressor->decompress(input.bytes());
                                     std::string statistics = result.statistics.to_json();
                                     return std::pair{std::move(result), std::move(statistics)};
-                                });
+                                })});
                             }
                         }
                     }
+                }
+            }
+
+            // Repetitions are interleaved across configurations, in alternating
+            // order, so that slow drifts of the machine (temperature, background
+            // load) affect every configuration alike instead of whichever ran last.
+            for (std::size_t r = 0; r < args.warmup; ++r) {
+                for (Configuration& configuration : configurations) {
+                    static_cast<void>(configuration.run(configuration.row));
+                }
+            }
+            for (std::size_t r = 0; r < args.repetitions; ++r) {
+                for (std::size_t i = 0; i < configurations.size(); ++i) {
+                    Configuration& configuration =
+                        configurations[r % 2 == 0 ? i : configurations.size() - 1 - i];
+                    Row row = configuration.run(configuration.row);
+                    row.repetition = r;
+                    write_row(out, row);
                 }
             }
         }
