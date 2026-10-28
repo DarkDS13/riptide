@@ -1,0 +1,94 @@
+#include <riptide/inflate/block_finder.hpp>
+
+#include <algorithm>
+#include <cstring>
+
+#include <riptide/common/bit_reader.hpp>
+#include <riptide/inflate/dynamic_header.hpp>
+
+namespace riptide {
+namespace {
+
+/// Loads up to eight bytes starting at `byte_offset`, zero-padded past the end.
+std::uint64_t load_word(std::span<const std::uint8_t> data, std::size_t byte_offset) noexcept {
+    std::uint64_t word = 0;
+    if (byte_offset < data.size()) {
+        std::memcpy(&word, data.data() + byte_offset,
+                    std::min<std::size_t>(sizeof(word), data.size() - byte_offset));
+    }
+    return word;
+}
+
+/// Cheap pre-filter on the first 13 bits of a candidate header: BFINAL = 0,
+/// BTYPE = 2 (dynamic), and HLIT and HDIST within their valid ranges. It rejects
+/// about 89% of bit offsets before any table is read; the code-length code check in
+/// is_dynamic_header() then rejects nearly all of the rest.
+constexpr bool passes_header_prefilter(std::uint64_t bits) noexcept {
+    const bool non_final_dynamic = (bits & 0x7U) == 0x4U;
+    const auto hlit = (bits >> 3) & 0x1FU;
+    const auto hdist = (bits >> 8) & 0x1FU;
+    return non_final_dynamic && hlit < 30 && hdist < 30;
+}
+
+}  // namespace
+
+std::optional<BlockBoundary> BlockFinder::find(std::size_t begin_bit, std::size_t end_bit) const {
+    const auto dynamic = find_dynamic(begin_bit, end_bit);
+    const std::size_t stored_limit = dynamic ? *dynamic : end_bit;
+    if (const auto stored = find_stored(begin_bit, stored_limit)) {
+        return BlockBoundary{*stored, true};
+    }
+    if (dynamic) {
+        return BlockBoundary{*dynamic, false};
+    }
+    return std::nullopt;
+}
+
+std::optional<std::size_t> BlockFinder::find_dynamic(std::size_t begin_bit,
+                                                     std::size_t end_bit) const {
+    end_bit = std::min(end_bit, input_.size() * 8);
+    std::size_t bit = begin_bit;
+    while (bit < end_bit) {
+        const std::size_t byte = bit / 8;
+        const std::uint64_t word = load_word(input_, byte);
+        for (unsigned shift = static_cast<unsigned>(bit % 8); shift < 8 && bit < end_bit;
+             ++shift, ++bit) {
+            if (passes_header_prefilter(word >> shift) && is_dynamic_header(bit)) {
+                return bit;
+            }
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<std::size_t> BlockFinder::find_stored(std::size_t begin_bit,
+                                                    std::size_t end_bit) const {
+    // The LEN field is byte-aligned, and the three bits before it are either the
+    // block header (BFINAL = 0, BTYPE = 00) or zero padding.
+    std::size_t byte = std::max<std::size_t>((begin_bit + 7) / 8, 1);
+    const std::size_t end_byte = std::min((end_bit + 7) / 8, input_.size());
+    for (; byte + 4 <= input_.size() && byte < end_byte; ++byte) {
+        if ((input_[byte - 1] >> 5) != 0) {
+            continue;
+        }
+        const unsigned length = input_[byte] | (unsigned{input_[byte + 1]} << 8);
+        const unsigned complement = input_[byte + 2] | (unsigned{input_[byte + 3]} << 8);
+        if ((length ^ 0xFFFFU) == complement && byte + 4 + length <= input_.size()) {
+            return byte * 8;
+        }
+    }
+    return std::nullopt;
+}
+
+bool BlockFinder::is_dynamic_header(std::size_t bit) const {
+    BitReader reader(input_, bit + 3);
+    DynamicCodeLengths lengths;
+    if (!read_dynamic_code_lengths(reader, lengths)) {
+        return false;
+    }
+    HuffmanDecoder literal_length;
+    HuffmanDecoder distance;
+    return build_dynamic_decoders(lengths, literal_length, distance);
+}
+
+}  // namespace riptide

@@ -33,8 +33,10 @@ add_library(riptide STATIC
     src/riptide/gzip/crc32.cpp
     src/riptide/gzip/gzip_format.cpp
     src/riptide/huffman/huffman_decoder.cpp
+    src/riptide/inflate/block_finder.cpp
     src/riptide/inflate/chunk_decoder.cpp
     src/riptide/inflate/dynamic_header.cpp
+    src/riptide/inflate/expansion_estimator.cpp
 )
 target_include_directories(riptide PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_options(riptide PRIVATE ${RIPTIDE_WARNINGS})
