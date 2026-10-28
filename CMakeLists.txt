@@ -15,7 +15,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 option(RIPTIDE_BUILD_TESTS "Build the test suite" OFF)
-option(RIPTIDE_BUILD_TOOLS "Build the command-line tool and benchmark driver" OFF)
+option(RIPTIDE_BUILD_TOOLS "Build the command-line tool and benchmark driver" ON)
 option(RIPTIDE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 option(RIPTIDE_SANITIZE "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 
@@ -61,6 +61,9 @@ if(RIPTIDE_BUILD_TOOLS)
     target_compile_options(riptide_cli PRIVATE ${RIPTIDE_WARNINGS})
     target_link_libraries(riptide_cli PRIVATE riptide)
 
+    add_executable(riptide_bench tools/riptide_bench.cpp tools/cli_options.cpp)
+    target_compile_options(riptide_bench PRIVATE ${RIPTIDE_WARNINGS})
+    target_link_libraries(riptide_bench PRIVATE riptide ZLIB::ZLIB)
 endif()
 
 if(RIPTIDE_BUILD_TESTS)
