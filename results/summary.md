@@ -274,3 +274,109 @@ Correctness: 1200 of 1200 measured runs byte-identical to zlib.
 | silesia_x5.tar.gz | 4M | split | 2371 | 2.24 |
 | silesia_x5.tar.gz | 512K | serial | 1896 | 1.79 |
 | silesia_x5.tar.gz | 512K | split | 1912 | 1.80 |
+
+## R1 riptide and rapidgzip 0.16.0, 4 MiB chunks (process wall time minus start-up)
+
+Start-up subtracted: riptide 3.6 ms, rapidgzip 22.7 ms.
+
+| File | Threads | riptide ms | rapidgzip ms | riptide GB/s | rapidgzip GB/s | riptide RSS MB | rapidgzip RSS MB |
+|---|---|---|---|---|---|---|---|
+| logs.ndjson.gz | 1 | 616.1 | 604.8 | 1.75 | 1.78 | 3200 | 122 |
+| logs.ndjson.gz | 2 | 469.1 | 606.4 | 2.30 | 1.78 | 3202 | 625 |
+| logs.ndjson.gz | 4 | 354.3 | 667.9 | 3.04 | 1.61 | 3208 | 1682 |
+| logs.ndjson.gz | 6 | 294.9 | 315.7 | 3.65 | 3.41 | 3141 | 1495 |
+| logs.ndjson.gz | 8 | 314.3 | 282.2 | 3.43 | 3.82 | 2966 | 1641 |
+| logs.ndjson.gz | 10 | 256.1 | 233.6 | 4.21 | 4.61 | 3010 | 1513 |
+| mixed.tar.gz | 1 | 337.4 | 578.9 | 1.32 | 0.77 | 1129 | 127 |
+| mixed.tar.gz | 2 | 217.6 | 350.5 | 2.04 | 1.27 | 1130 | 204 |
+| mixed.tar.gz | 4 | 167.5 | 212.3 | 2.65 | 2.09 | 1131 | 311 |
+| mixed.tar.gz | 6 | 155.3 | 168.8 | 2.86 | 2.63 | 1135 | 361 |
+| mixed.tar.gz | 8 | 148.8 | 160.5 | 2.98 | 2.76 | 1136 | 400 |
+| mixed.tar.gz | 10 | 139.8 | 141.0 | 3.17 | 3.15 | 1136 | 467 |
+| reads.fastq.gz | 1 | 1636.5 | 2005.7 | 0.66 | 0.54 | 3089 | 56 |
+| reads.fastq.gz | 2 | 1202.7 | 1460.8 | 0.90 | 0.74 | 3209 | 174 |
+| reads.fastq.gz | 4 | 898.4 | 930.7 | 1.20 | 1.16 | 3426 | 278 |
+| reads.fastq.gz | 6 | 743.3 | 768.4 | 1.45 | 1.40 | 3497 | 460 |
+| reads.fastq.gz | 8 | 589.7 | 643.4 | 1.83 | 1.68 | 3499 | 612 |
+| reads.fastq.gz | 10 | 540.4 | 531.5 | 1.99 | 2.03 | 3499 | 712 |
+| silesia.tar.gz | 1 | 242.8 | 454.6 | 0.87 | 0.47 | 573 | 112 |
+| silesia.tar.gz | 2 | 177.6 | 264.6 | 1.19 | 0.80 | 574 | 162 |
+| silesia.tar.gz | 4 | 136.2 | 149.3 | 1.56 | 1.42 | 579 | 204 |
+| silesia.tar.gz | 6 | 115.6 | 129.4 | 1.83 | 1.64 | 582 | 252 |
+| silesia.tar.gz | 8 | 97.5 | 106.7 | 2.17 | 1.99 | 583 | 294 |
+| silesia.tar.gz | 10 | 90.9 | 98.9 | 2.33 | 2.14 | 586 | 286 |
+| silesia_x5.tar.gz | 1 | 1230.6 | 2279.7 | 0.86 | 0.46 | 2195 | 131 |
+| silesia_x5.tar.gz | 2 | 886.6 | 1354.9 | 1.20 | 0.78 | 2195 | 219 |
+| silesia_x5.tar.gz | 4 | 633.6 | 817.2 | 1.67 | 1.30 | 2224 | 352 |
+| silesia_x5.tar.gz | 6 | 544.7 | 658.8 | 1.95 | 1.61 | 2321 | 487 |
+| silesia_x5.tar.gz | 8 | 448.5 | 528.7 | 2.36 | 2.00 | 2293 | 582 |
+| silesia_x5.tar.gz | 10 | 424.6 | 490.7 | 2.50 | 2.16 | 2324 | 689 |
+
+## R2 Chunk size, 10 threads (process wall time minus start-up)
+
+| File | Chunk KiB | riptide, serial chain (ms) | riptide, blocked scan (ms) | rapidgzip (ms) |
+|---|---|---|---|---|
+| silesia.tar.gz | 64 | 288.8 | 243.3 | 184.0 |
+| silesia.tar.gz | 256 | 173.7 | 166.8 | 143.3 |
+| silesia.tar.gz | 1024 | 138.4 | 134.7 | 126.9 |
+| silesia.tar.gz | 4096 | 126.2 | 125.2 | 126.2 |
+| silesia_x5.tar.gz | 64 | 1384.3 | 1250.9 | 955.6 |
+| silesia_x5.tar.gz | 256 | 884.2 | 831.5 | 746.6 |
+| silesia_x5.tar.gz | 1024 | 661.1 | 649.4 | 664.8 |
+| silesia_x5.tar.gz | 4096 | 541.1 | 534.4 | 594.6 |
+
+## R1 comparisons (Mann-Whitney U, Holm-corrected; ratio > 1 means riptide is faster)
+
+| Comparison | Baseline median | Candidate median | Ratio | p (Holm) | Significant |
+|---|---|---|---|---|---|
+| logs.ndjson.gz 1 threads: riptide vs rapidgzip | 604.8 ms | 616.1 ms | 0.98x | 1 | no |
+| logs.ndjson.gz 2 threads: riptide vs rapidgzip | 606.4 ms | 469.1 ms | 1.29x | 0.00032 | yes |
+| logs.ndjson.gz 4 threads: riptide vs rapidgzip | 667.9 ms | 354.3 ms | 1.89x | 0.00032 | yes |
+| logs.ndjson.gz 6 threads: riptide vs rapidgzip | 315.7 ms | 294.9 ms | 1.07x | 1 | no |
+| logs.ndjson.gz 8 threads: riptide vs rapidgzip | 282.2 ms | 314.3 ms | 0.90x | 1 | no |
+| logs.ndjson.gz 10 threads: riptide vs rapidgzip | 233.6 ms | 256.1 ms | 0.91x | 1 | no |
+| mixed.tar.gz 1 threads: riptide vs rapidgzip | 578.9 ms | 337.4 ms | 1.72x | 0.00032 | yes |
+| mixed.tar.gz 2 threads: riptide vs rapidgzip | 350.5 ms | 217.6 ms | 1.61x | 0.00032 | yes |
+| mixed.tar.gz 4 threads: riptide vs rapidgzip | 212.3 ms | 167.5 ms | 1.27x | 0.052 | no |
+| mixed.tar.gz 6 threads: riptide vs rapidgzip | 168.8 ms | 155.3 ms | 1.09x | 1 | no |
+| mixed.tar.gz 8 threads: riptide vs rapidgzip | 160.5 ms | 148.8 ms | 1.08x | 1 | no |
+| mixed.tar.gz 10 threads: riptide vs rapidgzip | 141.0 ms | 139.8 ms | 1.01x | 1 | no |
+| reads.fastq.gz 1 threads: riptide vs rapidgzip | 2005.7 ms | 1636.5 ms | 1.23x | 0.00032 | yes |
+| reads.fastq.gz 2 threads: riptide vs rapidgzip | 1460.8 ms | 1202.7 ms | 1.21x | 0.00032 | yes |
+| reads.fastq.gz 4 threads: riptide vs rapidgzip | 930.7 ms | 898.4 ms | 1.04x | 1 | no |
+| reads.fastq.gz 6 threads: riptide vs rapidgzip | 768.4 ms | 743.3 ms | 1.03x | 1 | no |
+| reads.fastq.gz 8 threads: riptide vs rapidgzip | 643.4 ms | 589.7 ms | 1.09x | 1 | no |
+| reads.fastq.gz 10 threads: riptide vs rapidgzip | 531.5 ms | 540.4 ms | 0.98x | 1 | no |
+| silesia.tar.gz 1 threads: riptide vs rapidgzip | 454.6 ms | 242.8 ms | 1.87x | 0.00032 | yes |
+| silesia.tar.gz 2 threads: riptide vs rapidgzip | 264.6 ms | 177.6 ms | 1.49x | 0.00032 | yes |
+| silesia.tar.gz 4 threads: riptide vs rapidgzip | 149.3 ms | 136.2 ms | 1.10x | 0.33 | no |
+| silesia.tar.gz 6 threads: riptide vs rapidgzip | 129.4 ms | 115.6 ms | 1.12x | 0.042 | yes |
+| silesia.tar.gz 8 threads: riptide vs rapidgzip | 106.7 ms | 97.5 ms | 1.09x | 0.042 | yes |
+| silesia.tar.gz 10 threads: riptide vs rapidgzip | 98.9 ms | 90.9 ms | 1.09x | 0.17 | no |
+| silesia_x5.tar.gz 1 threads: riptide vs rapidgzip | 2279.7 ms | 1230.6 ms | 1.85x | 0.00032 | yes |
+| silesia_x5.tar.gz 2 threads: riptide vs rapidgzip | 1354.9 ms | 886.6 ms | 1.53x | 0.00032 | yes |
+| silesia_x5.tar.gz 4 threads: riptide vs rapidgzip | 817.2 ms | 633.6 ms | 1.29x | 0.066 | no |
+| silesia_x5.tar.gz 6 threads: riptide vs rapidgzip | 658.8 ms | 544.7 ms | 1.21x | 0.14 | no |
+| silesia_x5.tar.gz 8 threads: riptide vs rapidgzip | 528.7 ms | 448.5 ms | 1.18x | 0.46 | no |
+| silesia_x5.tar.gz 10 threads: riptide vs rapidgzip | 490.7 ms | 424.6 ms | 1.16x | 0.46 | no |
+
+## R2 comparisons (Mann-Whitney U, Holm-corrected; ratio > 1 means riptide is faster)
+
+| Comparison | Baseline median | Candidate median | Ratio | p (Holm) | Significant |
+|---|---|---|---|---|---|
+| silesia.tar.gz 64 KiB: riptide blocked vs rapidgzip | 184.0 ms | 243.3 ms | 0.76x | 0.00017 | yes |
+| silesia.tar.gz 64 KiB: riptide blocked vs riptide serial | 288.8 ms | 243.3 ms | 1.19x | 0.00017 | yes |
+| silesia.tar.gz 256 KiB: riptide blocked vs rapidgzip | 143.3 ms | 166.8 ms | 0.86x | 0.00017 | yes |
+| silesia.tar.gz 256 KiB: riptide blocked vs riptide serial | 173.7 ms | 166.8 ms | 1.04x | 0.023 | yes |
+| silesia.tar.gz 1024 KiB: riptide blocked vs rapidgzip | 126.9 ms | 134.7 ms | 0.94x | 1 | no |
+| silesia.tar.gz 1024 KiB: riptide blocked vs riptide serial | 138.4 ms | 134.7 ms | 1.03x | 1 | no |
+| silesia.tar.gz 4096 KiB: riptide blocked vs rapidgzip | 126.2 ms | 125.2 ms | 1.01x | 1 | no |
+| silesia.tar.gz 4096 KiB: riptide blocked vs riptide serial | 126.2 ms | 125.2 ms | 1.01x | 1 | no |
+| silesia_x5.tar.gz 64 KiB: riptide blocked vs rapidgzip | 955.6 ms | 1250.9 ms | 0.76x | 0.00017 | yes |
+| silesia_x5.tar.gz 64 KiB: riptide blocked vs riptide serial | 1384.3 ms | 1250.9 ms | 1.11x | 0.014 | yes |
+| silesia_x5.tar.gz 256 KiB: riptide blocked vs rapidgzip | 746.6 ms | 831.5 ms | 0.90x | 0.00017 | yes |
+| silesia_x5.tar.gz 256 KiB: riptide blocked vs riptide serial | 884.2 ms | 831.5 ms | 1.06x | 0.0073 | yes |
+| silesia_x5.tar.gz 1024 KiB: riptide blocked vs rapidgzip | 664.8 ms | 649.4 ms | 1.02x | 0.063 | no |
+| silesia_x5.tar.gz 1024 KiB: riptide blocked vs riptide serial | 661.1 ms | 649.4 ms | 1.02x | 0.45 | no |
+| silesia_x5.tar.gz 4096 KiB: riptide blocked vs rapidgzip | 594.6 ms | 534.4 ms | 1.11x | 0.00017 | yes |
+| silesia_x5.tar.gz 4096 KiB: riptide blocked vs riptide serial | 541.1 ms | 534.4 ms | 1.01x | 1 | no |
