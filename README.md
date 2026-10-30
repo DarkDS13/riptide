@@ -41,6 +41,21 @@ Apple M4 (4 performance + 6 efficiency cores), 10 threads, medians of 10 interle
 - **Negative result:** work-balanced chunking costs 10–74 ms of sampling and does not speed up decoding.
 - **Where Riptide loses:** on the highly compressible logs, zlib's work is mostly long memory copies, while Riptide must replace markers in 94% of the output.
 
+### Against rapidgzip (the base paper's software)
+
+rapidgzip 0.16.0 and `riptide`, both as command-line tools in test mode on the same machine, start-up time subtracted (`bench/compare_rapidgzip.py`):
+
+| File | riptide, 10 threads | rapidgzip, 10 threads | riptide, 1 thread | rapidgzip, 1 thread |
+|---|---|---|---|---|
+| Silesia | 2.33 GB/s | 2.14 GB/s | 0.87 GB/s | 0.47 GB/s |
+| Silesia × 5 | 2.50 GB/s | 2.16 GB/s | 0.86 GB/s | 0.46 GB/s |
+| FASTQ | 1.99 GB/s | 2.03 GB/s | 0.66 GB/s | 0.54 GB/s |
+| Logs | 4.21 GB/s | 4.61 GB/s | 1.75 GB/s | 1.78 GB/s |
+
+- With 10 threads the two are statistically indistinguishable on every file (0.91–1.16×). With one or two threads riptide is 1.2–1.9× faster, partly because rapidgzip's ARM build does not use ISA-L, which it uses on x86.
+- rapidgzip needs 2–5× less memory, because it streams its output; riptide holds the whole output.
+- rapidgzip handles small chunks better: at 64 KiB it is 1.3× faster than riptide even with the prefix scan. So the scan's 1.11–1.19× gain inside riptide does not show that rapidgzip's own window chain is a bottleneck; testing that requires implementing M3 inside rapidgzip.
+
 ## Building and running
 
 Requires CMake ≥ 3.20, a C++20 compiler and zlib (used only by the tests and the benchmark).
@@ -67,6 +82,7 @@ Sanitizer builds: `-DRIPTIDE_SANITIZE=ON` (AddressSanitizer and UndefinedBehavio
 ./scripts/get_silesia.sh                           # downloads Silesia (68 MB)
 python3 bench/datasets.py ~/riptide-data           # builds the five datasets (needs NumPy)
 bench/run_benchmarks.sh build ~/riptide-data results 10
+python3 bench/compare_rapidgzip.py build/riptide "$(which rapidgzip)" ~/riptide-data results 10   # needs pip install rapidgzip==0.16.0
 python3 bench/analyze.py results                   # writes results/summary.{md,json}
 ```
 
@@ -94,14 +110,14 @@ docs/          design and evaluation notes, reports and presentations of all thr
 
 ## Branches
 
-Work was done on topic branches and merged into `main` with merge commits, so `git log --graph` shows the history of each feature, fix and experiment.
-
-| Prefix | Contents |
+| Branch | Contents |
 |---|---|
-| `feature/` | DEFLATE core, parallel runtime, window resolution, pipeline, CLI and benchmark, load-imbalance metric |
-| `fix/` | task-group race, truncated-input hang, block-finder allocations and incompressible data, test expectations |
-| `perf/` | decoder throughput, memory footprint |
-| `test/` | unit and integration tests |
-| `bench/`, `results/` | experiment tooling and measured results |
-| `prototype/`, `analysis/`, `experiments/` | Python prototypes and Silesia analysis from the methodology phase |
-| `docs/` | reports, presentations and guides |
+| `main` | Everything below, merged; the version to build and grade |
+| `feature/core-inflate` | Bit reader, Huffman decoder, chunk decoder with markers, block finder, CRC-32, gzip format |
+| `feature/parallel-runtime` | Work-stealing thread pool, task groups, `parallel_for`, prefix scans |
+| `feature/window-resolution` | Window maps, composition and scan-based resolution (M3) |
+| `feature/parallel-pipeline` | Partitioner, overflow policies (M1), parallel and sequential decompressors |
+| `bench/experiments` | Dataset generator, experiment runner, statistical analysis, rapidgzip comparison |
+| `docs/final-report` | Final report, presentation, design and evaluation notes |
+
+Smaller pieces of work (bug fixes, performance changes, tests, prototypes) were developed on short-lived branches that have been merged and deleted; `git log --merges main` lists them with their original names.

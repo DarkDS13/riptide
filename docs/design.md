@@ -177,7 +177,8 @@ pool. `parallel_for` splits an index range into about four pieces per worker.
 ## 4. Problems we had to solve
 
 These came up during development and are fixed in the history; each has a regression
-test.
+test. The name in parentheses is the branch the fix was developed on, as recorded in
+its merge commit on `main` (`git log --merges`).
 
 - **TaskGroup destroyed while a worker still used it.** `wait()` returned as soon as
   the pending count reached zero, but the worker that decremented it was still about to

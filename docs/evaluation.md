@@ -70,6 +70,16 @@ on the logs, mixed and Silesia × 5 files.
 **E5 Peak memory** (`memory.csv`). Maximum resident set size from `/usr/bin/time -l`
 for 512 KiB and 4 MiB chunks with both overflow policies.
 
+**R1, R2 Comparison with rapidgzip** (`rapidgzip_scaling.csv`, `rapidgzip_chunks.csv`,
+`bench/compare_rapidgzip.py`). rapidgzip 0.16.0 from PyPI, the base paper's software,
+and the riptide command-line tool, both in test mode (decompress and verify the CRC,
+write nothing), as separate processes: R1 with 1–10 threads at 4 MiB chunks on all
+files, R2 with 64 KiB–4 MiB chunks at 10 threads on the Silesia files. The rapidgzip
+command is a Python entry point and pays about 20 ms of interpreter start-up per run,
+so both tools are also timed on an empty file in every round and each tool's median
+start-up time is subtracted. rapidgzip streams its output, while riptide holds the
+whole output in memory, so their peak memory measures different designs.
+
 ## Statistics
 
 Medians and interquartile ranges over 10 repetitions. Two configurations are compared
@@ -116,6 +126,22 @@ All numbers are medians of 10 interleaved runs from `results/summary.md`.
    time is 0.65–0.91× that of fixed chunks. With 4 MiB chunks there are enough chunks for
    work stealing to balance them.
 
+7. **Against rapidgzip.** With 10 threads the two tools are within 0.91–1.16× of each
+   other on all five files and no difference is significant after correction (Silesia
+   2.33 against 2.14 GB/s, Silesia × 5 2.50 against 2.16, FASTQ 1.99 against 2.03,
+   logs 4.21 against 4.61). With one or two threads riptide is 1.2–1.9× faster on
+   Silesia, Silesia × 5, FASTQ and the mixed archive. On this ARM machine rapidgzip does not use ISA-L (its
+   own profile reports 0 s in it) and decodes with its custom inflate, so this gap
+   says little about the x86 servers of the base paper. rapidgzip needs 2–5× less
+   memory (689 MB against 2.3 GB on Silesia × 5) because it streams its output.
+8. **Small chunks against rapidgzip.** rapidgzip handles small chunks better than
+   riptide: from 4 MiB to 64 KiB its time grows 1.5–1.6×, riptide's 1.9–2.3× even
+   with the blocked scan, and at 64 KiB rapidgzip is 1.3× faster. Riptide's other
+   per-chunk costs (block search, task scheduling, chunk buffers) grow faster than
+   rapidgzip's. Inside riptide the scan still gives 1.11–1.19× at 64 KiB, but whether
+   it helps inside rapidgzip, where those other costs are lower, can only be shown by
+   implementing it there.
+
 ## Threats to validity
 
 - The test machine is a fanless laptop whose clock drops under sustained load. Before
@@ -126,7 +152,9 @@ All numbers are medians of 10 interleaved runs from `results/summary.md`.
 - One machine. The heterogeneous cores make efficiency look worse than on a server.
 - Three of the five datasets are synthetic. They are seeded and reproducible, but their
   statistics are ours, not a real sequencer's or service's.
-- rapidgzip itself was not run; comparisons with it use the numbers in its paper.
+- rapidgzip was run as a Python-wrapped command on ARM; its x86 build with ISA-L is
+  faster than what we measured. Start-up time is subtracted, but the comparison is of
+  two complete tools, not of the window step alone.
 
 ## Reproducing
 
@@ -136,7 +164,10 @@ cmake --build build -j
 ./scripts/get_silesia.sh
 python3 bench/datasets.py ~/riptide-data
 bench/run_benchmarks.sh build ~/riptide-data results 10
+python3 bench/compare_rapidgzip.py build/riptide "$(which rapidgzip)" ~/riptide-data results 10
 python3 bench/analyze.py results
 ```
+
+The rapidgzip comparison needs `pip install rapidgzip==0.16.0`.
 
 The full suite takes about 20 minutes on the machine above.

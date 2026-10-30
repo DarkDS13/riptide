@@ -43,7 +43,9 @@ makes the whole decompression up to 1.21$\times$ faster with small chunks, which
 up to 35\% less memory; with 4\,MiB chunks the chain is under 1\% of the run.
 Splitting overflowing chunks lowers load imbalance from 5.6 to 1.3 and run time by
 1.59$\times$ when there are few chunks per core, while header-driven work-balanced
-chunking does not pay off.
+chunking does not pay off. Measured against rapidgzip 0.16.0 on the same machine,
+Riptide is as fast with 10 threads and faster with one or two, but needs 2--5$\times$
+more memory and is slower with small chunks.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -374,9 +376,8 @@ Silesia$\times$5 with one thread, decoding takes 922\,ms and marker replacement
 another 188\,ms. On the log file 94\% of the output consists of markers, because
 nearly every string is copied from earlier text that itself came from the unknown
 window; replacement takes 145 of 288\,ms with 10 threads, and zlib, whose work there
-is mostly long memory copies, stays faster. For reference, the base paper reports
-5.6\,GB/s on Silesia with 128 cores~\cite{rapidgzip}; the machines are too different
-for a direct comparison, and we did not run its code.
+is mostly long memory copies, stays faster. Section~\ref{sec:rapidgzip} compares
+Riptide with the base paper's software on the same machine.
 
 \subsection{M3: Window Resolution}
 
@@ -422,8 +423,9 @@ negligible, and our measurements do not support the idea that it
 alone explains the base paper's scaling limit. It becomes significant when chunks are
 small relative to the file, which is what one wants to save memory: 512\,KiB chunks
 need 19\% less peak memory than 4\,MiB on Silesia$\times$5 (1.90 against 2.34\,GB)
-and 35\% less on the log file (2.09 against 3.21\,GB). M3 removes most of the cost
-that otherwise grows with the number of chunks.
+and 35\% less on the log file (2.09 against 3.21\,GB). Within Riptide, M3 removes
+most of the cost that otherwise grows with the number of chunks; whether it does the
+same inside rapidgzip is a separate question (Section~\ref{sec:rapidgzip}).
 
 \subsection{M1: Overflow and Chunking Policies}
 
@@ -462,14 +464,60 @@ to 1.34, but decode time stays at 103--108\,ms because it is set by individual l
 chunks, not by the plan. Totals are 0.65--0.91$\times$ those of fixed chunks. With
 enough chunks per thread, work stealing already balances the load.
 
+\subsection{Comparison with rapidgzip}
+\label{sec:rapidgzip}
+
+\begin{table}[t]
+\caption{Riptide and rapidgzip 0.16.0, 4\,MiB chunks (measured, GB/s)}
+\label{tab:rapidgzip}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+ & \multicolumn{2}{c}{\textbf{10 threads}} & \multicolumn{2}{c}{\textbf{1 thread}} \\
+\cmidrule(lr){2-3}\cmidrule(l){4-5}
+\textbf{File} & \textbf{Riptide} & \textbf{rapidgzip} & \textbf{Riptide} & \textbf{rapidgzip} \\
+\midrule
+Silesia & 2.33 & 2.14 & 0.87 & 0.47 \\
+Silesia$\times$5 & 2.50 & 2.16 & 0.86 & 0.46 \\
+mixed & 3.17 & 3.15 & 1.32 & 0.77 \\
+FASTQ & 1.99 & 2.03 & 0.66 & 0.54 \\
+logs & 4.21 & 4.61 & 1.75 & 1.78 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We ran rapidgzip 0.16.0, the base paper's software, and the Riptide command-line
+tool in test mode (decompress and verify, write nothing) as separate processes,
+with repetitions interleaved. The rapidgzip command starts a Python interpreter,
+about 20\,ms per run, so both tools were also timed on an empty file in every round
+and each tool's median start-up time was subtracted. Table~\ref{tab:rapidgzip} shows
+the result. With 10 threads the two tools are within 0.91--1.16$\times$ of each
+other and no difference is significant after correction. With one or two threads
+Riptide is 1.2--1.9$\times$ faster on all files but the logs; rapidgzip's profile
+shows that on this ARM machine it does not use ISA-L, which it uses on x86, so the
+gap says little about the servers of its paper. rapidgzip needs 2--5$\times$ less
+memory (689\,MB against 2.3\,GB on Silesia$\times$5), because it streams its output
+while Riptide assembles the whole output in memory.
+
+The comparison across chunk sizes is less favourable. From 4\,MiB to 64\,KiB
+chunks rapidgzip's time grows 1.5--1.6$\times$ and Riptide's 1.9--2.3$\times$ even with
+the blocked scan, so at 64\,KiB rapidgzip is 1.3$\times$ faster (184 against 243\,ms
+on Silesia). Riptide's other per-chunk costs, the block search, task scheduling and
+chunk buffers, grow faster than rapidgzip's. Inside Riptide the scan still gains
+1.11--1.19$\times$ at 64\,KiB, but this comparison cannot show that rapidgzip's own
+window chain limits it; that requires implementing the scan inside rapidgzip.
+
 \subsection{Threats to Validity}
 
 The test machine is a fanless laptop that lowers its clock under sustained load;
 before we interleaved repetitions, the same configuration measured up to 48\% slower
 ten minutes later, and the reported numbers are sustained rather than peak
 throughput. All results come from one machine with heterogeneous cores. Three of the
-five datasets are synthetic, though seeded and reproducible. The base paper's code
-was not run, so comparisons with it rest on its published numbers.
+five datasets are synthetic, though seeded and reproducible. rapidgzip was measured
+as a Python-wrapped tool on ARM without ISA-L; its x86 build is faster, and the
+comparison is of two complete tools rather than of the window step alone.
 
 \section{Conclusion and Future Scope}
 
@@ -479,7 +527,9 @@ scan resolves them 2.9--3.9$\times$ faster than the chain on 10 cores. The gain
 matters exactly when chunks are small, which is also when decompression uses the
 least memory, and it is negligible with chunks of a few MiB. Splitting
 oversized chunks removes the serialisation that output budgets cause when there are
-few chunks per core, while a header-driven plan is not worth its sampling cost. We
+few chunks per core, while a header-driven plan is not worth its sampling cost.
+Against rapidgzip on the same machine, Riptide matches it with 10 threads, beats it
+with few threads, and loses on memory and on small chunks. We
 built the whole decoder from scratch, and much of the work went into problems the
 measurements exposed: a use-after-free race in task groups, a hang on truncated
 input, a block search that crawled through incompressible data, and peak memory of
@@ -490,8 +540,10 @@ largest parallel overhead on highly compressible data; storing runs of markers a
 spans instead of 16-bit symbols (M2) would shrink the 16-bit data by 9--23\% on our
 files, by our measurements, and reduce the data replacement has to read.
 Streaming the output in order instead of assembling it in memory would bound memory
-by the number of chunks in flight. Porting M3 into rapidgzip would test it on 64 to
-128 cores, where the base paper sees its limit. Finally, window composition is a
+by the number of chunks in flight and close most of the memory gap to rapidgzip.
+Lowering Riptide's per-chunk overheads would make small chunks competitive. Porting
+M3 into rapidgzip would test it where those overheads are already low, on the 64 to
+128 cores at which the base paper sees its limit. Finally, window composition is a
 gather over 32\,KiB and maps naturally onto GPUs, which could resolve thousands of
 small chunks at once.
 
