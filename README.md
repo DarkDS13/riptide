@@ -94,14 +94,14 @@ docs/          design and evaluation notes, reports and presentations of all thr
 
 ## Branches
 
-Work was done on topic branches and merged into `main` with merge commits, so `git log --graph` shows the history of each feature, fix and experiment.
-
-| Prefix | Contents |
+| Branch | Contents |
 |---|---|
-| `feature/` | DEFLATE core, parallel runtime, window resolution, pipeline, CLI and benchmark, load-imbalance metric |
-| `fix/` | task-group race, truncated-input hang, block-finder allocations and incompressible data, test expectations |
-| `perf/` | decoder throughput, memory footprint |
-| `test/` | unit and integration tests |
-| `bench/`, `results/` | experiment tooling and measured results |
-| `prototype/`, `analysis/`, `experiments/` | Python prototypes and Silesia analysis from the methodology phase |
-| `docs/` | reports, presentations and guides |
+| `main` | Everything below, merged; the version to build and grade |
+| `feature/core-inflate` | Bit reader, Huffman decoder, chunk decoder with markers, block finder, CRC-32, gzip format |
+| `feature/parallel-runtime` | Work-stealing thread pool, task groups, `parallel_for`, prefix scans |
+| `feature/window-resolution` | Window maps, composition and scan-based resolution (M3) |
+| `feature/parallel-pipeline` | Partitioner, overflow policies (M1), parallel and sequential decompressors |
+| `bench/experiments` | Dataset generator, experiment runner, statistical analysis, rapidgzip comparison |
+| `docs/final-report` | Final report, presentation, design and evaluation notes |
+
+Smaller pieces of work (bug fixes, performance changes, tests, prototypes) were developed on short-lived branches that have been merged and deleted; `git log --merges main` lists them with their original names.
