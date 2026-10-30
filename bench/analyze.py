@@ -263,6 +263,52 @@ def memory(path):
             for (f, c, o), v in sorted(cells.items())]
 
 
+def rapidgzip_runs(path):
+    """Runs of compare_rapidgzip.py, keyed by configuration, with each tool's median
+    start-up time (measured on an empty file in the same rounds) subtracted."""
+    rows = list(csv.DictReader(open(path)))
+    startup = {tool: median([float(r["seconds"]) for r in rows if r["file"] == "empty.gz" and r["tool"] == tool])
+               for tool in {r["tool"] for r in rows}}
+    cells = defaultdict(list)
+    for r in rows:
+        if r["file"] != "empty.gz":
+            cells[(r["file"], r["tool"], int(r["threads"]), int(r["chunk_kib"]), r["window"])].append(
+                {"seconds": float(r["seconds"]) - startup[r["tool"]], "rss": int(r["max_rss_bytes"])})
+    return cells, startup
+
+
+def rapidgzip_scaling(path, output_bytes):
+    cells, startup = rapidgzip_runs(path)
+    out, comparisons = [], []
+    for f, threads in sorted({(k[0], k[2]) for k in cells}):
+        ours = cells[(f, "riptide", threads, 4096, "blocked")]
+        theirs = cells[(f, "rapidgzip", threads, 4096, "serial")]
+        out.append({"file": f, "threads": threads,
+                    "riptide_seconds": median(seconds(ours)), "rapidgzip_seconds": median(seconds(theirs)),
+                    "riptide_gb_s": output_bytes[f] / median(seconds(ours)) / 1e9,
+                    "rapidgzip_gb_s": output_bytes[f] / median(seconds(theirs)) / 1e9,
+                    "riptide_rss_mb": median([r["rss"] for r in ours]) / 1e6,
+                    "rapidgzip_rss_mb": median([r["rss"] for r in theirs]) / 1e6})
+        comparisons.append(compare(f"{f} {threads} threads: riptide vs rapidgzip", theirs, ours, seconds))
+    return {"startup_seconds": startup, "cells": out}, finish(comparisons)
+
+
+def rapidgzip_chunks(path):
+    cells, startup = rapidgzip_runs(path)
+    out, comparisons = [], []
+    for f, chunk in sorted({(k[0], k[3]) for k in cells}):
+        serial = cells[(f, "riptide", 10, chunk, "serial")]
+        blocked = cells[(f, "riptide", 10, chunk, "blocked")]
+        theirs = cells[(f, "rapidgzip", 10, chunk, "serial")]
+        out.append({"file": f, "chunk_kib": chunk,
+                    "riptide_serial_seconds": median(seconds(serial)),
+                    "riptide_blocked_seconds": median(seconds(blocked)),
+                    "rapidgzip_seconds": median(seconds(theirs))})
+        comparisons.append(compare(f"{f} {chunk} KiB: riptide blocked vs rapidgzip", theirs, blocked, seconds))
+        comparisons.append(compare(f"{f} {chunk} KiB: riptide blocked vs riptide serial", serial, blocked, seconds))
+    return {"startup_seconds": startup, "cells": out}, finish(comparisons)
+
+
 # ---------------------------------------------------------------- output
 
 def correctness(all_rows):
@@ -322,6 +368,31 @@ def markdown(summary):
                   "|---|---|---|---|---|"]
         for m in summary["memory"]:
             lines.append(f"| {m['file']} | {m['chunk_size']} | {m['overflow']} | {m['max_rss_mb']:.0f} | {m['rss_over_output']:.2f} |")
+    if summary.get("rapidgzip_scaling"):
+        r = summary["rapidgzip_scaling"]
+        lines += ["", "## R1 riptide and rapidgzip 0.16.0, 4 MiB chunks (process wall time minus start-up)", "",
+                  f"Start-up subtracted: riptide {r['startup_seconds']['riptide'] * 1e3:.1f} ms, "
+                  f"rapidgzip {r['startup_seconds']['rapidgzip'] * 1e3:.1f} ms.", "",
+                  "| File | Threads | riptide ms | rapidgzip ms | riptide GB/s | rapidgzip GB/s | riptide RSS MB | rapidgzip RSS MB |",
+                  "|---|---|---|---|---|---|---|---|"]
+        for c in r["cells"]:
+            lines.append(f"| {c['file']} | {c['threads']} | {c['riptide_seconds'] * 1e3:.1f} | "
+                         f"{c['rapidgzip_seconds'] * 1e3:.1f} | {c['riptide_gb_s']:.2f} | {c['rapidgzip_gb_s']:.2f} | "
+                         f"{c['riptide_rss_mb']:.0f} | {c['rapidgzip_rss_mb']:.0f} |")
+        r = summary["rapidgzip_chunks"]
+        lines += ["", "## R2 Chunk size, 10 threads (process wall time minus start-up)", "",
+                  "| File | Chunk KiB | riptide, serial chain (ms) | riptide, blocked scan (ms) | rapidgzip (ms) |",
+                  "|---|---|---|---|---|"]
+        for c in r["cells"]:
+            lines.append(f"| {c['file']} | {c['chunk_kib']} | {c['riptide_serial_seconds'] * 1e3:.1f} | "
+                         f"{c['riptide_blocked_seconds'] * 1e3:.1f} | {c['rapidgzip_seconds'] * 1e3:.1f} |")
+        for title, key in (("R1 comparisons", "rapidgzip_scaling_tests"), ("R2 comparisons", "rapidgzip_chunks_tests")):
+            lines += ["", f"## {title} (Mann-Whitney U, Holm-corrected; ratio > 1 means riptide is faster)", "",
+                      "| Comparison | Baseline median | Candidate median | Ratio | p (Holm) | Significant |",
+                      "|---|---|---|---|---|---|"]
+            for c in summary[key]:
+                lines.append(f"| {c['name']} | {c['baseline_median'] * 1e3:.1f} ms | {c['candidate_median'] * 1e3:.1f} ms | "
+                             f"{c['ratio']:.2f}x | {c['p_holm']:.2g} | {'yes' if c['significant'] else 'no'} |")
     return "\n".join(lines) + "\n"
 
 
@@ -341,6 +412,12 @@ def main():
     summary["m1_budget"], summary["m1_budget_tests"] = m1_policies(load(path("m1_budget.csv")))
     if os.path.exists(path("memory.csv")):
         summary["memory"] = memory(path("memory.csv"))
+    if os.path.exists(path("rapidgzip_scaling.csv")):
+        output_bytes = {f: e["output_bytes"] for f, e in summary["scaling"].items()}
+        summary["rapidgzip_scaling"], summary["rapidgzip_scaling_tests"] = rapidgzip_scaling(
+            path("rapidgzip_scaling.csv"), output_bytes)
+        summary["rapidgzip_chunks"], summary["rapidgzip_chunks_tests"] = rapidgzip_chunks(
+            path("rapidgzip_chunks.csv"))
 
     json.dump(summary, open(path("summary.json"), "w"), indent=1)
     open(path("summary.md"), "w").write(markdown(summary))
