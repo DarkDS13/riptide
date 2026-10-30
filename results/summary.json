@@ -2628,5 +2628,887 @@
    "max_rss_mb": 1911.816192,
    "rss_over_output": 1.803937823834197
   }
+ ],
+ "rapidgzip_scaling": {
+  "startup_seconds": {
+   "riptide": 0.003604,
+   "rapidgzip": 0.022689
+  },
+  "cells": [
+   {
+    "file": "logs.ndjson.gz",
+    "threads": 1,
+    "riptide_seconds": 0.6160829999999999,
+    "rapidgzip_seconds": 0.6048435000000001,
+    "riptide_gb_s": 1.748656547900202,
+    "rapidgzip_gb_s": 1.7811509456578434,
+    "riptide_rss_mb": 3200.04096,
+    "rapidgzip_rss_mb": 121.536512
+   },
+   {
+    "file": "logs.ndjson.gz",
+    "threads": 2,
+    "riptide_seconds": 0.4691115,
+    "rapidgzip_seconds": 0.606417,
+    "riptide_gb_s": 2.296506421181318,
+    "rapidgzip_gb_s": 1.7765293057417586,
+    "riptide_rss_mb": 3202.187264,
+    "rapidgzip_rss_mb": 625.025024
+   },
+   {
+    "file": "logs.ndjson.gz",
+    "threads": 4,
+    "riptide_seconds": 0.35425300000000004,
+    "rapidgzip_seconds": 0.6679485000000001,
+    "riptide_gb_s": 3.04109653834971,
+    "rapidgzip_gb_s": 1.6128752022049604,
+    "riptide_rss_mb": 3207.520256,
+    "rapidgzip_rss_mb": 1682.440192
+   },
+   {
+    "file": "logs.ndjson.gz",
+    "threads": 6,
+    "riptide_seconds": 0.294905,
+    "rapidgzip_seconds": 0.315735,
+    "riptide_gb_s": 3.6531003950424714,
+    "rapidgzip_gb_s": 3.4120942309215008,
+    "riptide_rss_mb": 3140.681728,
+    "rapidgzip_rss_mb": 1495.187456
+   },
+   {
+    "file": "logs.ndjson.gz",
+    "threads": 8,
+    "riptide_seconds": 0.3143415,
+    "rapidgzip_seconds": 0.282229,
+    "riptide_gb_s": 3.4272203065774005,
+    "rapidgzip_gb_s": 3.8171753150810157,
+    "riptide_rss_mb": 2966.437888,
+    "rapidgzip_rss_mb": 1640.73472
+   },
+   {
+    "file": "logs.ndjson.gz",
+    "threads": 10,
+    "riptide_seconds": 0.25612650000000003,
+    "rapidgzip_seconds": 0.2335905,
+    "riptide_gb_s": 4.206193314631637,
+    "rapidgzip_gb_s": 4.611992234273226,
+    "riptide_rss_mb": 3009.9456,
+    "rapidgzip_rss_mb": 1512.972288
+   },
+   {
+    "file": "mixed.tar.gz",
+    "threads": 1,
+    "riptide_seconds": 0.337362,
+    "rapidgzip_seconds": 0.5788985,
+    "riptide_gb_s": 1.3153538335675032,
+    "rapidgzip_gb_s": 0.7665426668060118,
+    "riptide_rss_mb": 1129.152512,
+    "rapidgzip_rss_mb": 127.107072
+   },
+   {
+    "file": "mixed.tar.gz",
+    "threads": 2,
+    "riptide_seconds": 0.217552,
+    "rapidgzip_seconds": 0.3505005,
+    "riptide_gb_s": 2.0397440611899684,
+    "rapidgzip_gb_s": 1.2660478373069368,
+    "riptide_rss_mb": 1130.463232,
+    "rapidgzip_rss_mb": 204.488704
+   },
+   {
+    "file": "mixed.tar.gz",
+    "threads": 4,
+    "riptide_seconds": 0.1675265,
+    "rapidgzip_seconds": 0.212325,
+    "riptide_gb_s": 2.6488370496608,
+    "rapidgzip_gb_s": 2.0899583186153303,
+    "riptide_rss_mb": 1131.454464,
+    "rapidgzip_rss_mb": 310.788096
+   },
+   {
+    "file": "mixed.tar.gz",
+    "threads": 6,
+    "riptide_seconds": 0.155275,
+    "rapidgzip_seconds": 0.1688065,
+    "riptide_gb_s": 2.8578354532281436,
+    "rapidgzip_gb_s": 2.628751854934496,
+    "riptide_rss_mb": 1134.649344,
+    "rapidgzip_rss_mb": 361.037824
+   },
+   {
+    "file": "mixed.tar.gz",
+    "threads": 8,
+    "riptide_seconds": 0.148812,
+    "rapidgzip_seconds": 0.160504,
+    "riptide_gb_s": 2.9819530683009434,
+    "rapidgzip_gb_s": 2.76473109704431,
+    "riptide_rss_mb": 1136.386048,
+    "rapidgzip_rss_mb": 399.941632
+   },
+   {
+    "file": "mixed.tar.gz",
+    "threads": 10,
+    "riptide_seconds": 0.13977050000000002,
+    "rapidgzip_seconds": 0.1409725,
+    "riptide_gb_s": 3.174850200864989,
+    "rapidgzip_gb_s": 3.1477798861480073,
+    "riptide_rss_mb": 1136.132096,
+    "rapidgzip_rss_mb": 466.935808
+   },
+   {
+    "file": "reads.fastq.gz",
+    "threads": 1,
+    "riptide_seconds": 1.6365310000000002,
+    "rapidgzip_seconds": 2.0056974999999997,
+    "riptide_gb_s": 0.6586723942290124,
+    "rapidgzip_gb_s": 0.5374378698682131,
+    "riptide_rss_mb": 3088.883712,
+    "rapidgzip_rss_mb": 55.779328
+   },
+   {
+    "file": "reads.fastq.gz",
+    "threads": 2,
+    "riptide_seconds": 1.202686,
+    "rapidgzip_seconds": 1.460849,
+    "riptide_gb_s": 0.8962753303854872,
+    "rapidgzip_gb_s": 0.737884471290325,
+    "riptide_rss_mb": 3208.511488,
+    "rapidgzip_rss_mb": 173.826048
+   },
+   {
+    "file": "reads.fastq.gz",
+    "threads": 4,
+    "riptide_seconds": 0.8983669999999999,
+    "rapidgzip_seconds": 0.9307445000000001,
+    "riptide_gb_s": 1.1998857838722927,
+    "rapidgzip_gb_s": 1.1581457553603591,
+    "riptide_rss_mb": 3425.81248,
+    "rapidgzip_rss_mb": 277.87264
+   },
+   {
+    "file": "reads.fastq.gz",
+    "threads": 6,
+    "riptide_seconds": 0.7433029999999999,
+    "rapidgzip_seconds": 0.7684155,
+    "riptide_gb_s": 1.4501997059072815,
+    "rapidgzip_gb_s": 1.4028058934261478,
+    "riptide_rss_mb": 3497.230336,
+    "rapidgzip_rss_mb": 459.890688
+   },
+   {
+    "file": "reads.fastq.gz",
+    "threads": 8,
+    "riptide_seconds": 0.589672,
+    "rapidgzip_seconds": 0.6434385,
+    "riptide_gb_s": 1.8280294672292394,
+    "rapidgzip_gb_s": 1.6752771119539784,
+    "riptide_rss_mb": 3498.975232,
+    "rapidgzip_rss_mb": 612.425728
+   },
+   {
+    "file": "reads.fastq.gz",
+    "threads": 10,
+    "riptide_seconds": 0.5404049999999999,
+    "rapidgzip_seconds": 0.5314585000000001,
+    "riptide_gb_s": 1.994685082484433,
+    "rapidgzip_gb_s": 2.028263339470532,
+    "riptide_rss_mb": 3499.040768,
+    "rapidgzip_rss_mb": 712.196096
+   },
+   {
+    "file": "silesia.tar.gz",
+    "threads": 1,
+    "riptide_seconds": 0.242809,
+    "rapidgzip_seconds": 0.4545715,
+    "riptide_gb_s": 0.8729508379013958,
+    "rapidgzip_gb_s": 0.4662859858130129,
+    "riptide_rss_mb": 573.292544,
+    "rapidgzip_rss_mb": 112.099328
+   },
+   {
+    "file": "silesia.tar.gz",
+    "threads": 2,
+    "riptide_seconds": 0.17757499999999998,
+    "rapidgzip_seconds": 0.264601,
+    "riptide_gb_s": 1.1936382936787273,
+    "rapidgzip_gb_s": 0.8010563830068671,
+    "riptide_rss_mb": 574.234624,
+    "rapidgzip_rss_mb": 161.83296
+   },
+   {
+    "file": "silesia.tar.gz",
+    "threads": 4,
+    "riptide_seconds": 0.13617600000000002,
+    "rapidgzip_seconds": 0.1492515,
+    "riptide_gb_s": 1.5565174480084594,
+    "rapidgzip_gb_s": 1.4201553753228608,
+    "riptide_rss_mb": 578.674688,
+    "rapidgzip_rss_mb": 203.841536
+   },
+   {
+    "file": "silesia.tar.gz",
+    "threads": 6,
+    "riptide_seconds": 0.1155675,
+    "rapidgzip_seconds": 0.1293855,
+    "riptide_gb_s": 1.8340824193653058,
+    "rapidgzip_gb_s": 1.6382076816953988,
+    "riptide_rss_mb": 582.434816,
+    "rapidgzip_rss_mb": 252.403712
+   },
+   {
+    "file": "silesia.tar.gz",
+    "threads": 8,
+    "riptide_seconds": 0.0974785,
+    "rapidgzip_seconds": 0.10672000000000001,
+    "riptide_gb_s": 2.1744314900208765,
+    "rapidgzip_gb_s": 1.986134932533733,
+    "riptide_rss_mb": 583.499776,
+    "rapidgzip_rss_mb": 294.060032
+   },
+   {
+    "file": "silesia.tar.gz",
+    "threads": 10,
+    "riptide_seconds": 0.0908725,
+    "rapidgzip_seconds": 0.0989285,
+    "riptide_gb_s": 2.332502352196759,
+    "rapidgzip_gb_s": 2.142560738311002,
+    "riptide_rss_mb": 586.457088,
+    "rapidgzip_rss_mb": 286.212096
+   },
+   {
+    "file": "silesia_x5.tar.gz",
+    "threads": 1,
+    "riptide_seconds": 1.230566,
+    "rapidgzip_seconds": 2.2797289999999997,
+    "riptide_gb_s": 0.8612310107706534,
+    "rapidgzip_gb_s": 0.4648805186932307,
+    "riptide_rss_mb": 2194.874368,
+    "rapidgzip_rss_mb": 130.99008
+   },
+   {
+    "file": "silesia_x5.tar.gz",
+    "threads": 2,
+    "riptide_seconds": 0.8865954999999999,
+    "rapidgzip_seconds": 1.3548845,
+    "riptide_gb_s": 1.1953609058471424,
+    "rapidgzip_gb_s": 0.7822080775150944,
+    "riptide_rss_mb": 2195.316736,
+    "rapidgzip_rss_mb": 219.21792
+   },
+   {
+    "file": "silesia_x5.tar.gz",
+    "threads": 4,
+    "riptide_seconds": 0.6335925,
+    "rapidgzip_seconds": 0.817158,
+    "riptide_gb_s": 1.6726864664591201,
+    "rapidgzip_gb_s": 1.296935965871961,
+    "riptide_rss_mb": 2223.890432,
+    "rapidgzip_rss_mb": 351.772672
+   },
+   {
+    "file": "silesia_x5.tar.gz",
+    "threads": 6,
+    "riptide_seconds": 0.5447175,
+    "rapidgzip_seconds": 0.6587750000000001,
+    "riptide_gb_s": 1.9455985900948658,
+    "rapidgzip_gb_s": 1.6087459299457323,
+    "riptide_rss_mb": 2321.047552,
+    "rapidgzip_rss_mb": 486.52288
+   },
+   {
+    "file": "silesia_x5.tar.gz",
+    "threads": 8,
+    "riptide_seconds": 0.44853350000000003,
+    "rapidgzip_seconds": 0.5287160000000001,
+    "riptide_gb_s": 2.3628148176223176,
+    "rapidgzip_gb_s": 2.0044818011938355,
+    "riptide_rss_mb": 2293.26848,
+    "rapidgzip_rss_mb": 582.352896
+   },
+   {
+    "file": "silesia_x5.tar.gz",
+    "threads": 10,
+    "riptide_seconds": 0.4246105,
+    "rapidgzip_seconds": 0.49074,
+    "riptide_gb_s": 2.495938277550838,
+    "rapidgzip_gb_s": 2.1595989729795817,
+    "riptide_rss_mb": 2323.611648,
+    "rapidgzip_rss_mb": 689.250304
+   }
+  ]
+ },
+ "rapidgzip_scaling_tests": [
+  {
+   "name": "logs.ndjson.gz 1 threads: riptide vs rapidgzip",
+   "baseline_median": 0.6048435000000001,
+   "candidate_median": 0.6160829999999999,
+   "ratio": 0.9817565165732541,
+   "U": 57.0,
+   "p": 0.6305289138106476,
+   "rank_biserial": -0.1399999999999999,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "logs.ndjson.gz 2 threads: riptide vs rapidgzip",
+   "baseline_median": 0.606417,
+   "candidate_median": 0.4691115,
+   "ratio": 1.2926926754087247,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0003247526467340709,
+   "significant": true
+  },
+  {
+   "name": "logs.ndjson.gz 4 threads: riptide vs rapidgzip",
+   "baseline_median": 0.6679485000000001,
+   "candidate_median": 0.35425300000000004,
+   "ratio": 1.885512613866361,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0003247526467340709,
+   "significant": true
+  },
+  {
+   "name": "logs.ndjson.gz 6 threads: riptide vs rapidgzip",
+   "baseline_median": 0.315735,
+   "candidate_median": 0.294905,
+   "ratio": 1.070632915684712,
+   "U": 39.0,
+   "p": 0.43587217735824546,
+   "rank_biserial": 0.21999999999999997,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "logs.ndjson.gz 8 threads: riptide vs rapidgzip",
+   "baseline_median": 0.282229,
+   "candidate_median": 0.3143415,
+   "ratio": 0.8978419966819526,
+   "U": 61.0,
+   "p": 0.43587217735824546,
+   "rank_biserial": -0.21999999999999997,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "logs.ndjson.gz 10 threads: riptide vs rapidgzip",
+   "baseline_median": 0.2335905,
+   "candidate_median": 0.25612650000000003,
+   "ratio": 0.9120122283324841,
+   "U": 61.0,
+   "p": 0.43587217735824546,
+   "rank_biserial": -0.21999999999999997,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "mixed.tar.gz 1 threads: riptide vs rapidgzip",
+   "baseline_median": 0.5788985,
+   "candidate_median": 0.337362,
+   "ratio": 1.7159564503411766,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0003247526467340709,
+   "significant": true
+  },
+  {
+   "name": "mixed.tar.gz 2 threads: riptide vs rapidgzip",
+   "baseline_median": 0.3505005,
+   "candidate_median": 0.217552,
+   "ratio": 1.6111113664778995,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0003247526467340709,
+   "significant": true
+  },
+  {
+   "name": "mixed.tar.gz 4 threads: riptide vs rapidgzip",
+   "baseline_median": 0.212325,
+   "candidate_median": 0.1675265,
+   "ratio": 1.2674114244612047,
+   "U": 12.0,
+   "p": 0.002879473467708762,
+   "rank_biserial": 0.76,
+   "p_holm": 0.05183052241875771,
+   "significant": false
+  },
+  {
+   "name": "mixed.tar.gz 6 threads: riptide vs rapidgzip",
+   "baseline_median": 0.1688065,
+   "candidate_median": 0.155275,
+   "ratio": 1.0871453872162293,
+   "U": 29.0,
+   "p": 0.12300547749464158,
+   "rank_biserial": 0.42000000000000004,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "mixed.tar.gz 8 threads: riptide vs rapidgzip",
+   "baseline_median": 0.160504,
+   "candidate_median": 0.148812,
+   "ratio": 1.0785689326129613,
+   "U": 31.0,
+   "p": 0.16549394877568252,
+   "rank_biserial": 0.38,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "mixed.tar.gz 10 threads: riptide vs rapidgzip",
+   "baseline_median": 0.1409725,
+   "candidate_median": 0.13977050000000002,
+   "ratio": 1.0085998118343997,
+   "U": 39.0,
+   "p": 0.43587217735824546,
+   "rank_biserial": 0.21999999999999997,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "reads.fastq.gz 1 threads: riptide vs rapidgzip",
+   "baseline_median": 2.0056974999999997,
+   "candidate_median": 1.6365310000000002,
+   "ratio": 1.2255786783140676,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0003247526467340709,
+   "significant": true
+  },
+  {
+   "name": "reads.fastq.gz 2 threads: riptide vs rapidgzip",
+   "baseline_median": 1.460849,
+   "candidate_median": 1.202686,
+   "ratio": 1.214655363078975,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0003247526467340709,
+   "significant": true
+  },
+  {
+   "name": "reads.fastq.gz 4 threads: riptide vs rapidgzip",
+   "baseline_median": 0.9307445000000001,
+   "candidate_median": 0.8983669999999999,
+   "ratio": 1.0360403932913833,
+   "U": 41.0,
+   "p": 0.52884886011821,
+   "rank_biserial": 0.18000000000000005,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "reads.fastq.gz 6 threads: riptide vs rapidgzip",
+   "baseline_median": 0.7684155,
+   "candidate_median": 0.7433029999999999,
+   "ratio": 1.0337850109578464,
+   "U": 31.0,
+   "p": 0.16549394877568252,
+   "rank_biserial": 0.38,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "reads.fastq.gz 8 threads: riptide vs rapidgzip",
+   "baseline_median": 0.6434385,
+   "candidate_median": 0.589672,
+   "ratio": 1.0911803511104479,
+   "U": 33.0,
+   "p": 0.21756262313537855,
+   "rank_biserial": 0.33999999999999997,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "reads.fastq.gz 10 threads: riptide vs rapidgzip",
+   "baseline_median": 0.5314585000000001,
+   "candidate_median": 0.5404049999999999,
+   "ratio": 0.9834448237895655,
+   "U": 44.0,
+   "p": 0.6842105263157895,
+   "rank_biserial": 0.12,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia.tar.gz 1 threads: riptide vs rapidgzip",
+   "baseline_median": 0.4545715,
+   "candidate_median": 0.242809,
+   "ratio": 1.8721361234550615,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0003247526467340709,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 2 threads: riptide vs rapidgzip",
+   "baseline_median": 0.264601,
+   "candidate_median": 0.17757499999999998,
+   "ratio": 1.4900802477826272,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0003247526467340709,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 4 threads: riptide vs rapidgzip",
+   "baseline_median": 0.1492515,
+   "candidate_median": 0.13617600000000002,
+   "ratio": 1.0960191223123017,
+   "U": 20.0,
+   "p": 0.023230639329710537,
+   "rank_biserial": 0.6,
+   "p_holm": 0.32522895061594753,
+   "significant": false
+  },
+  {
+   "name": "silesia.tar.gz 6 threads: riptide vs rapidgzip",
+   "baseline_median": 0.1293855,
+   "candidate_median": 0.1155675,
+   "ratio": 1.1195664871179178,
+   "U": 11.0,
+   "p": 0.0020892420273225226,
+   "rank_biserial": 0.78,
+   "p_holm": 0.04178484054645045,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 8 threads: riptide vs rapidgzip",
+   "baseline_median": 0.10672000000000001,
+   "candidate_median": 0.0974785,
+   "ratio": 1.0948055212174994,
+   "U": 11.0,
+   "p": 0.0020892420273225226,
+   "rank_biserial": 0.78,
+   "p_holm": 0.04178484054645045,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 10 threads: riptide vs rapidgzip",
+   "baseline_median": 0.0989285,
+   "candidate_median": 0.0908725,
+   "ratio": 1.0886516823021266,
+   "U": 17.0,
+   "p": 0.011496243694386109,
+   "rank_biserial": 0.6599999999999999,
+   "p_holm": 0.17244365541579162,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 1 threads: riptide vs rapidgzip",
+   "baseline_median": 2.2797289999999997,
+   "candidate_median": 1.230566,
+   "ratio": 1.852585720717133,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0003247526467340709,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 2 threads: riptide vs rapidgzip",
+   "baseline_median": 1.3548845,
+   "candidate_median": 0.8865954999999999,
+   "ratio": 1.528187882749236,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0003247526467340709,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 4 threads: riptide vs rapidgzip",
+   "baseline_median": 0.817158,
+   "candidate_median": 0.6335925,
+   "ratio": 1.289721705986103,
+   "U": 13.0,
+   "p": 0.0038862066725843815,
+   "rank_biserial": 0.74,
+   "p_holm": 0.06606551343393449,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 6 threads: riptide vs rapidgzip",
+   "baseline_median": 0.6587750000000001,
+   "candidate_median": 0.5447175,
+   "ratio": 1.2093883526782234,
+   "U": 16.0,
+   "p": 0.00893069778518695,
+   "rank_biserial": 0.6799999999999999,
+   "p_holm": 0.1428911645629912,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 8 threads: riptide vs rapidgzip",
+   "baseline_median": 0.5287160000000001,
+   "candidate_median": 0.44853350000000003,
+   "ratio": 1.1787659115762814,
+   "U": 22.0,
+   "p": 0.03546298902336054,
+   "rank_biserial": 0.56,
+   "p_holm": 0.4610188573036871,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 10 threads: riptide vs rapidgzip",
+   "baseline_median": 0.49074,
+   "candidate_median": 0.4246105,
+   "ratio": 1.1557415560849296,
+   "U": 22.0,
+   "p": 0.03546298902336054,
+   "rank_biserial": 0.56,
+   "p_holm": 0.4610188573036871,
+   "significant": false
+  }
+ ],
+ "rapidgzip_chunks": {
+  "startup_seconds": {
+   "riptide": 0.004058,
+   "rapidgzip": 0.0303305
+  },
+  "cells": [
+   {
+    "file": "silesia.tar.gz",
+    "chunk_kib": 64,
+    "riptide_serial_seconds": 0.288775,
+    "riptide_blocked_seconds": 0.243313,
+    "rapidgzip_seconds": 0.18400799999999998
+   },
+   {
+    "file": "silesia.tar.gz",
+    "chunk_kib": 256,
+    "riptide_serial_seconds": 0.173717,
+    "riptide_blocked_seconds": 0.16678949999999998,
+    "rapidgzip_seconds": 0.1433335
+   },
+   {
+    "file": "silesia.tar.gz",
+    "chunk_kib": 1024,
+    "riptide_serial_seconds": 0.138436,
+    "riptide_blocked_seconds": 0.1347175,
+    "rapidgzip_seconds": 0.12691199999999997
+   },
+   {
+    "file": "silesia.tar.gz",
+    "chunk_kib": 4096,
+    "riptide_serial_seconds": 0.1262265,
+    "riptide_blocked_seconds": 0.12524749999999998,
+    "rapidgzip_seconds": 0.12622699999999998
+   },
+   {
+    "file": "silesia_x5.tar.gz",
+    "chunk_kib": 64,
+    "riptide_serial_seconds": 1.3843025,
+    "riptide_blocked_seconds": 1.25086,
+    "rapidgzip_seconds": 0.9556319999999999
+   },
+   {
+    "file": "silesia_x5.tar.gz",
+    "chunk_kib": 256,
+    "riptide_serial_seconds": 0.8842205,
+    "riptide_blocked_seconds": 0.8315205,
+    "rapidgzip_seconds": 0.746567
+   },
+   {
+    "file": "silesia_x5.tar.gz",
+    "chunk_kib": 1024,
+    "riptide_serial_seconds": 0.661108,
+    "riptide_blocked_seconds": 0.6493545000000001,
+    "rapidgzip_seconds": 0.664777
+   },
+   {
+    "file": "silesia_x5.tar.gz",
+    "chunk_kib": 4096,
+    "riptide_serial_seconds": 0.5410905,
+    "riptide_blocked_seconds": 0.534432,
+    "rapidgzip_seconds": 0.5945575
+   }
+  ]
+ },
+ "rapidgzip_chunks_tests": [
+  {
+   "name": "silesia.tar.gz 64 KiB: riptide blocked vs rapidgzip",
+   "baseline_median": 0.18400799999999998,
+   "candidate_median": 0.243313,
+   "ratio": 0.7562604546407301,
+   "U": 100.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": -1.0,
+   "p_holm": 0.00017320141159150447,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 64 KiB: riptide blocked vs riptide serial",
+   "baseline_median": 0.288775,
+   "candidate_median": 0.243313,
+   "ratio": 1.1868457501243255,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.00017320141159150447,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 256 KiB: riptide blocked vs rapidgzip",
+   "baseline_median": 0.1433335,
+   "candidate_median": 0.16678949999999998,
+   "ratio": 0.859367646044865,
+   "U": 100.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": -1.0,
+   "p_holm": 0.00017320141159150447,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 256 KiB: riptide blocked vs riptide serial",
+   "baseline_median": 0.173717,
+   "candidate_median": 0.16678949999999998,
+   "ratio": 1.041534389155193,
+   "U": 12.0,
+   "p": 0.002879473467708762,
+   "rank_biserial": 0.76,
+   "p_holm": 0.023035787741670095,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 1024 KiB: riptide blocked vs rapidgzip",
+   "baseline_median": 0.12691199999999997,
+   "candidate_median": 0.1347175,
+   "ratio": 0.942060237162952,
+   "U": 64.0,
+   "p": 0.3149992422438243,
+   "rank_biserial": -0.28,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia.tar.gz 1024 KiB: riptide blocked vs riptide serial",
+   "baseline_median": 0.138436,
+   "candidate_median": 0.1347175,
+   "ratio": 1.0276022046133577,
+   "U": 35.0,
+   "p": 0.2798610058671978,
+   "rank_biserial": 0.30000000000000004,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia.tar.gz 4096 KiB: riptide blocked vs rapidgzip",
+   "baseline_median": 0.12622699999999998,
+   "candidate_median": 0.12524749999999998,
+   "ratio": 1.0078205153795485,
+   "U": 42.0,
+   "p": 0.5787416917447877,
+   "rank_biserial": 0.16000000000000003,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia.tar.gz 4096 KiB: riptide blocked vs riptide serial",
+   "baseline_median": 0.1262265,
+   "candidate_median": 0.12524749999999998,
+   "ratio": 1.007816523283898,
+   "U": 54.0,
+   "p": 0.7959362618805343,
+   "rank_biserial": -0.08000000000000007,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 64 KiB: riptide blocked vs rapidgzip",
+   "baseline_median": 0.9556319999999999,
+   "candidate_median": 1.25086,
+   "ratio": 0.7639799817725403,
+   "U": 100.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": -1.0,
+   "p_holm": 0.00017320141159150447,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 64 KiB: riptide blocked vs riptide serial",
+   "baseline_median": 1.3843025,
+   "candidate_median": 1.25086,
+   "ratio": 1.1066806037446235,
+   "U": 10.0,
+   "p": 0.001504687263201195,
+   "rank_biserial": 0.8,
+   "p_holm": 0.013542185368810754,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 256 KiB: riptide blocked vs rapidgzip",
+   "baseline_median": 0.746567,
+   "candidate_median": 0.8315205,
+   "ratio": 0.8978335470983577,
+   "U": 100.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": -1.0,
+   "p_holm": 0.00017320141159150447,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 256 KiB: riptide blocked vs riptide serial",
+   "baseline_median": 0.8842205,
+   "candidate_median": 0.8315205,
+   "ratio": 1.0633778722232343,
+   "U": 8.0,
+   "p": 0.000725280911039425,
+   "rank_biserial": 0.84,
+   "p_holm": 0.00725280911039425,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 1024 KiB: riptide blocked vs rapidgzip",
+   "baseline_median": 0.664777,
+   "candidate_median": 0.6493545000000001,
+   "ratio": 1.0237505091594805,
+   "U": 16.0,
+   "p": 0.00893069778518695,
+   "rank_biserial": 0.6799999999999999,
+   "p_holm": 0.06251488449630865,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 1024 KiB: riptide blocked vs riptide serial",
+   "baseline_median": 0.661108,
+   "candidate_median": 0.6493545000000001,
+   "ratio": 1.0181002826653238,
+   "U": 26.0,
+   "p": 0.07525601333650869,
+   "rank_biserial": 0.48,
+   "p_holm": 0.45153608001905216,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 4096 KiB: riptide blocked vs rapidgzip",
+   "baseline_median": 0.5945575,
+   "candidate_median": 0.534432,
+   "ratio": 1.1125035551763367,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.00017320141159150447,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 4096 KiB: riptide blocked vs riptide serial",
+   "baseline_median": 0.5410905,
+   "candidate_median": 0.534432,
+   "ratio": 1.0124590219148555,
+   "U": 43.0,
+   "p": 0.6305289138106476,
+   "rank_biserial": 0.14,
+   "p_holm": 1.0,
+   "significant": false
+  }
  ]
 }
