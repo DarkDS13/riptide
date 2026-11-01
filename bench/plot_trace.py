@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Draw a riptide timeline (riptide --trace FILE) as a PNG image.
 
-Usage: bench/plot_trace.py TRACE.json OUTPUT.png [--title TEXT] [--from MS] [--to MS]
+Usage: bench/plot_trace.py TRACE.json OUTPUT.png [--title TEXT] [--from MS] [--to MS] [--no-legend]
 
 One row per thread (main, worker 0..n-1) plus one row per extra track (the GPU).
 Above them, a band shows the pipeline stages. Bars are coloured by what the task
@@ -71,6 +71,7 @@ def main():
     parser.add_argument("--from", dest="start", type=float, default=None)
     parser.add_argument("--to", dest="end", type=float, default=None)
     parser.add_argument("--width", type=int, default=2400)
+    parser.add_argument("--no-legend", action="store_true", help="omit the legend, e.g. for all but one stacked panel")
     args = parser.parse_args()
 
     names, order, spans, instants = load(args.trace)
@@ -84,6 +85,8 @@ def main():
     scale = 2
     label_w, right, top, row_h, gap = 150 * scale, 30 * scale, 70 * scale, 26 * scale, 6 * scale
     stage_h, axis_h, legend_h = 26 * scale, 40 * scale, 64 * scale
+    if args.no_legend:
+        legend_h = 0
     width = args.width
     height = top + stage_h + gap + len(tids) * (row_h + gap) + axis_h + legend_h
     image = Image.new("RGB", (width, height), "white")
@@ -145,8 +148,8 @@ def main():
     y += axis_h
 
     lx = label_w
-    entries = [(c, l) for c, l in LEGEND if any(e["cat"] == c for e in work)]
-    if instants:
+    entries = [] if args.no_legend else [(c, l) for c, l in LEGEND if any(e["cat"] == c for e in work)]
+    if instants and not args.no_legend:
         entries.append((None, "work steal"))
     for category, label in entries:
         entry_w = 24 * scale + draw.textlength(label, font=small) + 30 * scale

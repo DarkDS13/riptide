@@ -70,6 +70,16 @@ on the logs, mixed and Silesia × 5 files.
 **E5 Peak memory** (`memory.csv`). Maximum resident set size from `/usr/bin/time -l`
 for 512 KiB and 4 MiB chunks with both overflow policies.
 
+**E6 Window resolution on the GPU** (`gpu_window.csv`). M3 on the M4's 10-core GPU
+with Metal. The CPU serial chain and blocked scan against `gpu-serial` (the chain,
+one 32 768-thread dispatch per chunk) and `gpu-blocked` (the blocked scheme with
+√(2N) blocks), 10 threads, chunk sizes 64 KiB–4 MiB, on Silesia and Silesia × 5. The
+GPU is set up when the decompressor is created, outside the timed region, as the
+thread pool is; its buffers are reused across runs, as `malloc` reuses memory for the
+CPU strategies. `window_seconds` is the wall time of the step on the CPU, including
+encoding the dispatches and waiting for the GPU; `window_device_seconds` is the GPU's
+own execution time from its command-buffer timestamps.
+
 **R1, R2 Comparison with rapidgzip** (`rapidgzip_scaling.csv`, `rapidgzip_chunks.csv`,
 `bench/compare_rapidgzip.py`). rapidgzip 0.16.0 from PyPI, the base paper's software,
 and the riptide command-line tool, both in test mode (decompress and verify the CRC,
@@ -93,7 +103,7 @@ comparisons of an experiment, and effects are reported as the ratio of medians. 
 
 All numbers are medians of 10 interleaved runs from `results/summary.md`.
 
-1. **Correctness.** 1200 of 1200 timed runs are byte-identical to zlib.
+1. **Correctness.** 1600 of 1600 timed runs are byte-identical to zlib.
 2. **Scaling.** With 10 threads and 4 MiB chunks Riptide decodes Silesia × 5 at
    3.01 GB/s: 3.3× its own single-thread time, 4.4× the sequential decoder and 2.5×
    zlib. Silesia reaches 2.60 GB/s (2.1× zlib), the mixed archive 2.84 GB/s (1.5×) and
@@ -142,6 +152,25 @@ All numbers are medians of 10 interleaved runs from `results/summary.md`.
    it helps inside rapidgzip, where those other costs are lower, can only be shown by
    implementing it there.
 
+9. **M3 on the GPU (E6).** With 64 KiB chunks on Silesia × 5 (5 205 chunks) the
+   window step takes 184 ms as a serial chain, 66 ms with the CPU blocked scan,
+   36 ms with `gpu-serial` and 26 ms with `gpu-blocked`, of which 24 ms is GPU execution.
+   `gpu-blocked` is 2.5× faster than the CPU scan (p < 0.001) and 7.0× faster than the
+   serial chain; the whole run takes 813 ms instead of 863 ms with the CPU scan (1.06×,
+   p = 0.016) and 990 ms with the serial chain. The gain over the CPU scan is 2.2× at
+   128 KiB and 1.6× at 256 KiB; on Silesia at 64 KiB it is 1.4× for the step and 1.03×
+   for the run. From 1 MiB chunks up the GPU is not faster: each call has a fixed cost of
+   about a millisecond (setting up and waiting for three command buffers), more than the
+   whole step costs on the CPU there (0.3–3.5 ms). Total time is then unchanged.
+10. **Parallelism inside a step.** `gpu-serial` performs the base paper's chain,
+    unchanged, but resolves each window with 32 768 GPU threads; that alone makes the
+    step 3.0–5.1× faster than the CPU chain at 64–256 KiB chunks. On top of it, the
+    blocked scheme cuts dependent dispatches from 5 204 to 205 on Silesia × 5 and the
+    step from 36 to 26 ms, but `gpu-serial` varies too much from run to run (IQR 15 ms)
+    for that difference to be significant after correction. Both kinds of parallelism
+    are available because window maps compose: across chunks (the scan) and across the
+    32 768 positions of a window (each composition).
+
 ## Threats to validity
 
 - The test machine is a fanless laptop whose clock drops under sustained load. Before
@@ -152,6 +181,11 @@ All numbers are medians of 10 interleaved runs from `results/summary.md`.
 - One machine. The heterogeneous cores make efficiency look worse than on a server.
 - Three of the five datasets are synthetic. They are seeded and reproducible, but their
   statistics are ours, not a real sequencer's or service's.
+- E6 ran on battery power (Low Power Mode off), the other experiments may not have; it
+  compares strategies only with each other, in interleaved runs. GPU times vary more
+  than CPU times between runs (the GPU idles during decoding and must clock up).
+- Each GPU decompressor keeps up to 0.5 GB of buffers between calls to avoid page
+  faults and GPU mapping on every call; a long-lived process pays that memory.
 - rapidgzip was run as a Python-wrapped command on ARM; its x86 build with ISA-L is
   faster than what we measured. Start-up time is subtracted, but the comparison is of
   two complete tools, not of the window step alone.
