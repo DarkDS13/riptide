@@ -1,12 +1,15 @@
 // Tests of the parallel runtime and of window resolution: thread pool, task groups,
-// parallel_for, the prefix scans, and the window-map algebra behind M3.
+// parallel_for, the prefix scans, the window-map algebra behind M3, and tracing.
 
 #include <atomic>
 #include <functional>
+#include <cstdint>
 #include <random>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
+#include <riptide/common/trace.hpp>
 #include <riptide/parallel/prefix_scan.hpp>
 #include <riptide/parallel/task_group.hpp>
 #include <riptide/parallel/thread_pool.hpp>
@@ -204,4 +207,42 @@ RIPTIDE_TEST(window_resolver, every_strategy_resolves_identical_windows) {
             }
         }
     }
+}
+
+RIPTIDE_TEST(trace, records_scopes_from_every_thread) {
+    ThreadPool pool(3);
+    std::string json;
+    std::size_t events = 0;
+    {
+        trace::Session session;
+        CHECK(trace::active());
+        CHECK_THROWS(trace::Session{}, std::logic_error);
+        parallel_for(pool, 0, 64, 1, [](std::size_t lo, std::size_t hi) {
+            const trace::Scope scope("unit of work", "test", {"items", static_cast<std::int64_t>(hi - lo)});
+        });
+        trace::instant("marker", "test");
+        trace::interval("GPU", "kernel", "gpu", trace::now_ns(), trace::now_ns() + 1000);
+        session.stop();
+        CHECK(!trace::active());
+        // Events after stop() are not kept.
+        { const trace::Scope ignored("ignored", "test"); }
+        events = session.event_count();
+        std::ostringstream out;
+        session.write_json(out);
+        json = out.str();
+    }
+    CHECK(events >= 2 + 2);  // parallel_for pieces, the instant and the GPU interval
+    CHECK(json.find("\"unit of work\"") != std::string::npos);
+    CHECK(json.find("\"items\":") != std::string::npos);
+    CHECK(json.find("\"GPU\"") != std::string::npos);
+    CHECK(json.find("\"ignored\"") == std::string::npos);
+    CHECK(json.find("\"worker ") != std::string::npos);
+}
+
+RIPTIDE_TEST(trace, scopes_are_free_without_a_session) {
+    CHECK(!trace::active());
+    const trace::Scope scope("not recorded", "test");
+    trace::instant("not recorded", "test");
+    trace::Session session;
+    CHECK_EQ(session.event_count(), 0U);
 }
