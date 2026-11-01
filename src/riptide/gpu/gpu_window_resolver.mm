@@ -303,7 +303,7 @@ WindowResolution GpuWindowResolver::resolve(const ByteWindow& first, const Maps&
 
         // Command buffers on one queue execute in order.
         setup.reset();
-        const trace::Scope wait("wait for GPU", "window");
+        const trace::Scope wait("wait for GPU", "wait");
         for (id<MTLCommandBuffer> phase : phases) {
             [phase commit];
         }
