@@ -129,6 +129,53 @@ there are many chunks (small chunks or very large files); with 4 MiB chunks on a
 200 MB file the whole step takes well under a millisecond either way. The evaluation
 reports both regimes.
 
+### 2.4.1 Window resolution on the GPU (M3 on Metal, ours)
+
+The CPU scans parallelise across chunks. There is a second, finer kind of
+parallelism inside every step: applying a map to a window is 32 768 independent
+lookups (`out[i] = map[i]` or `previous[marker]`), and composing two maps is 32 768
+independent gathers. On a GPU one step is therefore one dispatch of 32 768 threads
+per window, and what remains on the critical path is the number of *dependent
+dispatches* (`gpu/gpu_window_resolver.mm`):
+
+| Strategy | Dependent dispatches | Threads per dispatch | Compositions |
+|---|---|---|---|
+| `gpu-serial` | N | 32 768 | N |
+| `gpu-blocked` | 2⌈N/B⌉ + B − 1 with B = √(2N) | 32 768 × B | ≈ 2N |
+
+`gpu-blocked` runs the same three phases as the CPU blocked scan (compose each block,
+carry the entering window from block to block, resolve each block), but chooses the
+number of blocks to minimise dependent dispatches instead of matching the core count:
+for 5 205 chunks, B = 102 and 205 dispatches instead of 5 204. The GPU strategies
+produce windows identical to the CPU ones; the tests check both against the serial
+chain on random maps and against zlib end to end.
+
+Three implementation points mattered:
+
+- **No copies.** On Apple silicon the GPU shares memory with the CPU. The pipeline
+  writes each chunk's window map straight into a GPU buffer
+  (`window/window.cpp: write_final_window`), and marker replacement reads the
+  resolved windows from another GPU buffer, so `WindowResolution` holds its windows
+  as a span plus an owner rather than a vector.
+- **No integer division on the GPU.** The first version computed each thread's block
+  boundaries as `n * b / B` in 64-bit arithmetic; `gpu-blocked` then took 176 ms of GPU
+  time on Silesia × 5. Computing the boundaries once on the host cut it to 27 ms.
+- **Reused buffers.** A fresh 340 MB shared buffer costs a page fault per page on first
+  use and must be mapped for the GPU, on every call. Inside the benchmark that made the
+  GPU strategies slower than the CPU ones (window maps 108 ms instead of 10 ms). The
+  resolver keeps its buffers and reuses them while large enough, just as `malloc`
+  reuses memory for the CPU strategies.
+
+The kernels are compiled from source when the decompressor is created, so the build
+needs no offline Metal compiler; builds without Metal (`-DRIPTIDE_GPU=OFF`, non-Apple
+systems) use a stub that reports no GPU.
+
+Marker replacement was not moved to the GPU. Its input is each chunk's 16-bit output,
+which the decoder grows in ordinary `realloc` memory that the GPU cannot use
+directly; handing it over would mean copying 2 bytes per symbol, about as much memory
+traffic as the replacement itself (read 2 bytes, gather, write 1 byte). We expect no
+gain and did not build or measure a GPU version.
+
 ### 2.5 Work-sized chunking and split-on-overflow (M1, ours)
 
 Fixed-size chunks have equal *compressed* size but not equal decode cost: a chunk of
@@ -173,6 +220,26 @@ pipeline uses to report first-stage load imbalance λ = busiest worker / mean.
 `wait` *helps* by running pending tasks until the group is empty, so a task that waits
 for sub-tasks (split-on-overflow schedules into the same group) can never deadlock the
 pool. `parallel_for` splits an index range into about four pieces per worker.
+
+### 3.1 Timeline tracing
+
+`common/trace.hpp` records what every thread does and when. While a `trace::Session`
+is active, a `trace::Scope` records an interval on the calling thread's row and
+`trace::instant` a point event; `riptide --trace run.json` writes them in the Chrome
+trace-event format, which [Perfetto](https://ui.perfetto.dev) and `chrome://tracing`
+show as one row per thread, and `bench/plot_trace.py` draws as an image. The pipeline
+records every stage, every chunk decode (with its compressed offset and output size),
+every phase of window resolution, every marker-replacement piece and CRC block, work
+steals and overflow splits; the GPU resolver adds its command buffers as a `GPU` row,
+from the GPU's own timestamps.
+
+Each thread appends to its own event list, so recording takes a lock only on a
+thread's first event in a session. Without a session a `Scope` costs one relaxed
+atomic load; with tracing compiled in but off, Silesia runs in the same time as
+without the instrumentation (medians of 22 alternating runs within 0.5%), so it stays
+in the code permanently. The timelines in the report are produced this way, and they
+show directly what the stage timings only summarise: when workers sit idle, how much
+of a stage is serial, and where steals happen.
 
 ## 4. Problems we had to solve
 
@@ -222,6 +289,17 @@ its merge commit on `main` (`git log --merges`).
   continuations of different chunks already run in parallel; it matters when an output
   budget turns a few large chunks into chains of dependent continuations.
 
+- **Memory pressure from the benchmark itself.** The GPU experiment first showed the
+  GPU strategies building their window maps in 70 ms instead of 9 ms. Writing into a
+  reused GPU buffer takes 3 ms in isolation; the benchmark process, however, kept all
+  twenty decompressors of the experiment alive, ten of them holding up to 0.5 GB of
+  GPU buffers, and macOS compressed the idle ones. E6 now runs one chunk size per
+  process (`bench/run_benchmarks.sh`).
+- **Benchmarks on a sleeping laptop.** One E6 run took two hours: the lid was closed
+  two minutes in, and the machine only woke for a few seconds at a time, giving runs
+  of 26 s to 17 min. The power log (`pmset -g log`) showed which runs were affected;
+  they were discarded and repeated with the machine awake under `caffeinate`.
+
 The test suite (`tests/`) runs under AddressSanitizer, UndefinedBehaviorSanitizer and
 ThreadSanitizer (`-DRIPTIDE_SANITIZE=ON`, `-DRIPTIDE_SANITIZE_THREAD=ON`).
 
@@ -229,11 +307,12 @@ ThreadSanitizer (`-DRIPTIDE_SANITIZE=ON`, `-DRIPTIDE_SANITIZE_THREAD=ON`).
 
 | Directory | Contents |
 |---|---|
-| `common/` | bit reader, DEFLATE tables, error types, stopwatch |
+| `common/` | bit reader, DEFLATE tables, buffer, error types, stopwatch, timeline tracer |
 | `huffman/` | canonical Huffman decoder with two-level tables |
 | `inflate/` | chunk decoder (markers or known window), dynamic header reader, block finder, expansion estimator |
 | `gzip/` | gzip header and footer, CRC-32 and CRC combination |
 | `io/` | memory-mapped input file |
 | `parallel/` | work-stealing pool, task group and `parallel_for`, prefix scans |
 | `window/` | window maps, composition, scan-based resolution |
+| `gpu/` | window resolution on the GPU (Metal kernels and host code), stub for builds without Metal |
 | `pipeline/` | options, statistics, partitioner, parallel and sequential decompressors |
