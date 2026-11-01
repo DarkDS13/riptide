@@ -15,6 +15,7 @@ struct DecompressionStatistics {
     double chain_seconds = 0.0;      ///< Linking chunk results; includes fallback decodes.
     double window_map_seconds = 0.0; ///< Building every chunk's window map (independent, parallel).
     double window_seconds = 0.0;     ///< Window resolution itself (the step M3 parallelises).
+    double window_device_seconds = 0.0; ///< GPU execution time within window_seconds (GPU strategies).
     double replace_seconds = 0.0;    ///< Second stage: marker replacement and assembly.
     double checksum_seconds = 0.0;   ///< Parallel CRC-32 and footer checks.
     double total_seconds = 0.0;

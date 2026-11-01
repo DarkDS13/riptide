@@ -33,7 +33,8 @@ Parallelism:
   -P, --threads N          worker threads (default: all hardware threads)
       --chunk-size SIZE    compressed bytes per chunk, e.g. 512K or 4M (default: 4M)
       --window STRATEGY    window resolution: serial, hillis-steele, blelloch,
-                           blocked (default: blocked)
+                           blocked, or on the GPU gpu-serial, gpu-blocked
+                           (default: blocked)
       --chunking POLICY    fixed or work-balanced (default: fixed)
       --overflow POLICY    serial or split (default: split)
       --max-expansion R    output budget per chunk, as a multiple of its
@@ -142,7 +143,7 @@ void print_statistics(const riptide::DecompressionStatistics& s, const riptide::
                  "  %-22s %9.1f MB/s\n"
                  "  chunks: %zu planned, %zu in chain, %zu fallback, %zu overflow splits, "
                  "%zu unused, %zu rejected candidates\n"
-                 "  window resolution: %zu rounds, %zu compositions; members: %zu\n"
+                 "  window resolution: %zu rounds, %zu compositions, %.4f s on the GPU; members: %zu\n"
                  "  first-stage load imbalance: %.2f\n"
                  "  thread pool: %llu tasks, %llu stolen\n",
                  o.threads, riptide::cli::format_size(o.chunk_size).c_str(),
@@ -154,7 +155,7 @@ void print_statistics(const riptide::DecompressionStatistics& s, const riptide::
                  "replace (second stage)", s.replace_seconds, "checksum", s.checksum_seconds, "total",
                  s.total_seconds, "throughput", s.throughput_mb_per_s(), s.planned_chunks,
                  s.chain_length, s.fallback_decodes, s.overflow_splits, s.unused_results,
-                 s.rejected_candidates, s.window_rounds, s.window_combinations, s.members,
+                 s.rejected_candidates, s.window_rounds, s.window_combinations, s.window_device_seconds, s.members,
                  s.decode_imbalance,
                  static_cast<unsigned long long>(s.pool.tasks_executed),
                  static_cast<unsigned long long>(s.pool.tasks_stolen));

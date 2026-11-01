@@ -2,6 +2,7 @@
 
 #include <zlib.h>
 
+#include <algorithm>
 #include <cstdlib>
 #include <random>
 #include <string>
@@ -49,6 +50,28 @@ RIPTIDE_TEST(pipeline, every_window_strategy_matches_zlib) {
         DecompressionStatistics statistics;
         CHECK(decompresses_correctly(gzip, options, &statistics));
         CHECK(statistics.chain_length > 10);
+    }
+}
+
+RIPTIDE_TEST(pipeline, gpu_window_strategies_match_zlib) {
+    if (!GpuWindowResolver::available()) {
+        return;
+    }
+    for (const Bytes& gzip : {test::gzip_compress(test::mixed(3'000'000, 1)),
+                              test::gzip_compress(test::mixed(2'000'000, 5))}) {
+        for (const auto strategy : {WindowStrategy::kGpuSerial, WindowStrategy::kGpuBlocked}) {
+            auto options = small_chunks(8 * 1024);
+            options.window_strategy = strategy;
+            // One decompressor for several runs, so reused GPU buffers are covered.
+            ParallelDecompressor decompressor(options);
+            const Bytes expected = test::zlib_decompress(gzip);
+            for (int run = 0; run < 2; ++run) {
+                const DecompressionResult result = decompressor.decompress(gzip);
+                CHECK(std::ranges::equal(result.data(), expected));
+                CHECK(result.statistics.chain_length > 10);
+                CHECK(result.statistics.window_device_seconds > 0.0);
+            }
+        }
     }
 }
 
