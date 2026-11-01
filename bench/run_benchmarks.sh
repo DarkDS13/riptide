@@ -10,6 +10,8 @@
 #   E4 m1_policies.csv     chunking and overflow policies (M1) on high-ratio and mixed data
 #      m1_budget.csv       overflow policies under a tight output budget, few chunks per thread
 #   E5 memory.csv          peak resident memory per configuration (via /usr/bin/time)
+#   E6 gpu_window.csv      CPU and GPU window resolution across chunk sizes, 10 threads
+#                          (skipped if the build has no GPU support)
 set -euo pipefail
 
 BUILD=${1:?build directory}
@@ -60,4 +62,13 @@ for file in "$DATA/silesia_x5.tar.gz" "$DATA/logs.ndjson.gz"; do
         done
     done
 done
+if "$CLI" -t --window gpu-blocked "$DATA/silesia.tar.gz" 2>/dev/null; then
+    echo "E6: CPU and GPU window resolution across chunk sizes"
+    "$BENCH" --threads 10 --chunk-sizes 64K,128K,256K,1M,4M \
+        --windows serial,blocked,gpu-serial,gpu-blocked \
+        --repetitions "$REPS" --output "$OUT/gpu_window.csv" \
+        "$DATA/silesia.tar.gz" "$DATA/silesia_x5.tar.gz"
+else
+    echo "E6: skipped, no GPU support in this build"
+fi
 echo "done: results in $OUT"
