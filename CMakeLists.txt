@@ -31,6 +31,7 @@ if(RIPTIDE_WARNINGS_AS_ERRORS)
 endif()
 
 add_library(riptide STATIC
+    src/riptide/common/trace.cpp
     src/riptide/gzip/crc32.cpp
     src/riptide/gzip/gzip_format.cpp
     src/riptide/huffman/huffman_decoder.cpp

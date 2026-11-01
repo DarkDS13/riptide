@@ -2,6 +2,9 @@
 
 #include <algorithm>
 #include <chrono>
+#include <string>
+
+#include <riptide/common/trace.hpp>
 
 namespace riptide {
 namespace {
@@ -87,6 +90,7 @@ std::size_t ThreadPool::hardware_threads() noexcept {
 void ThreadPool::worker_loop(std::size_t index) {
     current_pool = this;
     current_index = index;
+    trace::name_thread("worker " + std::to_string(index));
     for (;;) {
         Task task;
         if (pop_own(index, task) || steal(index, task)) {
@@ -135,6 +139,7 @@ bool ThreadPool::steal(std::size_t thief, Task& task) {
             task = std::move(queue.tasks.back());
             queue.tasks.pop_back();
             stolen_.fetch_add(1, std::memory_order_relaxed);
+            trace::instant("steal", "pool", {"victim", static_cast<std::int64_t>(victim)});
             return true;
         }
     }
