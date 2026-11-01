@@ -2,6 +2,8 @@
 \IEEEoverridecommandlockouts
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
+\usepackage{graphicx}
+\graphicspath{{../figures/}{figures/}}
 \usepackage{url}
 \usepackage{tikz}
 \usepackage{pgfplots}
@@ -35,12 +37,15 @@ each chunk's window is a function of its predecessor's, that these functions com
 associatively, and that the chain is therefore a parallel prefix scan. We built
 Riptide, a complete parallel gzip decoder written from scratch in C++20, with three
 scan algorithms, a work-stealing runtime and an overflow policy that splits chunks
-exceeding their memory budget across idle cores. On a 10-core Apple M4, all 1\,200
-timed runs are byte-identical to zlib; Riptide decodes the Silesia corpus at
+exceeding their memory budget across idle cores. Because every step of the chain is
+itself 32\,768 independent lookups, we also run the scan on the GPU. On a 10-core
+Apple M4, all 1\,600 timed runs are byte-identical to zlib; Riptide decodes the Silesia corpus at
 2.60\,GB/s and a 1\,GB Silesia file at 3.01\,GB/s, 2.1--2.5$\times$ zlib. The
 blocked scan resolves windows 2.9--3.9$\times$ faster than the serial chain, which
 makes the whole decompression up to 1.21$\times$ faster with small chunks, which use
-up to 35\% less memory; with 4\,MiB chunks the chain is under 1\% of the run.
+up to 35\% less memory; with 4\,MiB chunks the chain is under 1\% of the run. On
+the M4's GPU the step for 5\,205 chunks takes 26\,ms, against 66\,ms for the CPU scan
+and 184\,ms for the serial chain.
 Splitting overflowing chunks lowers load imbalance from 5.6 to 1.3 and run time by
 1.59$\times$ when there are few chunks per core, while header-driven work-balanced
 chunking does not pay off. Measured against rapidgzip 0.16.0 on the same machine,
@@ -49,7 +54,7 @@ more memory and is slower with small chunks.
 \end{abstract}
 
 \begin{IEEEkeywords}
-gzip, DEFLATE, parallel decompression, prefix scan, work stealing, load balancing
+gzip, DEFLATE, parallel decompression, prefix scan, GPU, work stealing, load balancing
 \end{IEEEkeywords}
 
 \section{Introduction}
@@ -249,6 +254,25 @@ per core, three synchronisation points instead of one per round, and phases that
 on contiguous chunks, which matters because a composition reads and writes 64\,KiB
 and is memory-bound.
 
+\subsection{M3 on the GPU}
+
+The scans above parallelise across chunks. Each step also has parallelism inside it:
+applying a map to a window is 32\,768 independent lookups, and composing two maps is
+32\,768 independent gathers. On a GPU one step is therefore one dispatch of 32\,768
+threads per window, and the cost that remains is the number of dependent dispatches.
+We implemented two strategies with Metal on Apple silicon. \emph{gpu-serial} runs the
+base paper's chain with one dispatch per chunk, $N$ dispatches. \emph{gpu-blocked}
+runs the three phases of the blocked scan, but chooses the number of blocks to
+minimise dependent dispatches rather than to match the core count: with $B$ blocks
+there are $2\lceil N/B\rceil + B - 1$, minimised by $B = \sqrt{2N}$, so for
+$N = 5\,205$ there are 205 dispatches instead of 5\,204, each covering one window of
+every block. On Apple silicon the GPU shares memory with the CPU, so the pipeline
+writes each chunk's map straight into a GPU buffer and marker replacement reads the
+resolved windows from another, with no copies. Two details mattered: computing block
+boundaries on the host, because 64-bit division in every GPU thread made the first
+version $6\times$ slower, and reusing buffers across calls, because a fresh 340\,MB
+buffer costs a page fault per page and must be mapped for the GPU each time.
+
 \subsection{M1: Output Budgets and Work-Balanced Chunks}
 
 Every chunk has an output budget, by default 20 times its compressed size, which
@@ -278,10 +302,13 @@ polynomial.
 
 The code base is organised by layer (bit reader, Huffman, inflate, gzip, parallel
 runtime, windows, pipeline) and builds with CMake without a warning at
-\texttt{-Wall -Wextra -Wpedantic -Wshadow -Wconversion}. 44 unit and integration tests compare
-every chunk size, scan, policy, block type, compression level and multi-member file
+\texttt{-Wall -Wextra -Wpedantic -Wshadow -Wconversion}. 49 unit and integration tests compare
+every chunk size, scan (CPU and GPU), policy, block type, compression level and multi-member file
 with zlib and check that corrupted and truncated streams are rejected; they run
 clean under AddressSanitizer, UndefinedBehaviorSanitizer and ThreadSanitizer.
+A built-in tracer records every task of every thread and the GPU's command buffers
+and writes them in the Chrome trace format; with tracing off it costs one atomic load
+per task and no measurable time. Fig.~\ref{fig:timeline} was produced with it.
 
 \emph{Problems we had to solve.} A task group could be destroyed while the worker
 that completed its last task was still notifying it, which failed in one run in
@@ -315,8 +342,9 @@ the same inflate code with a known window.
 
 \subsection{Correctness}
 
-All 1\,200 timed runs, across five files, six thread counts, seven chunk sizes, four
-scans and four policy combinations, produced output byte-identical to zlib.
+All 1\,600 timed runs, across five files, six thread counts, seven chunk sizes, four
+CPU scans, two GPU strategies and four policy combinations, produced output
+byte-identical to zlib.
 
 \subsection{Scaling}
 
@@ -427,6 +455,62 @@ and 35\% less on the log file (2.09 against 3.21\,GB). Within Riptide, M3 remove
 most of the cost that otherwise grows with the number of chunks; whether it does the
 same inside rapidgzip is a separate question (Section~\ref{sec:rapidgzip}).
 
+\subsection{M3 on the GPU}
+
+\begin{table}[t]
+\caption{CPU and GPU window resolution on Silesia$\times$5, 10 threads (measured, ms)}
+\label{tab:gpu}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.6pt}
+\begin{tabular}{@{}rrrrrrrr@{}}
+\toprule
+ & & \multicolumn{4}{c}{\textbf{Window step}} & \multicolumn{2}{c}{\textbf{Total}} \\
+\cmidrule(lr){3-6}\cmidrule(l){7-8}
+\textbf{Chunk} & $\boldsymbol{N}$ & \textbf{Serial} & \textbf{Block.} & \textbf{GPU-s.} & \textbf{GPU-b.} & \textbf{Block.} & \textbf{GPU-b.} \\
+\midrule
+64\,KiB & 5205 & 183.9 & 65.9 & 36.2 & 26.4 & 863 & 813 \\
+128\,KiB & 2603 & 96.9 & 31.6 & 20.0 & 14.2 & 694 & 681 \\
+256\,KiB & 1302 & 57.4 & 16.9 & 12.7 & 10.5 & 667 & 663 \\
+1\,MiB & 326 & 9.9 & 3.5 & 4.1 & 3.8 & 574 & 575 \\
+4\,MiB & 82 & 1.5 & 0.6 & 1.8 & 1.6 & 461 & 465 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.49\textwidth]{timeline_serial.png}\hfill
+\includegraphics[width=0.49\textwidth]{timeline_gpu_blocked.png}
+\caption{Timelines of one run on Silesia$\times$5 with 64\,KiB chunks and 10
+threads, from the end of decoding to the end of the run, recorded with Riptide's
+tracer. Left: the serial window chain runs on one thread for 182\,ms while nine
+workers wait. Right: \emph{gpu-blocked} resolves the windows on the GPU (bottom row)
+and the stage takes 33\,ms. With the CPU blocked scan (not shown) it takes 68\,ms.}
+\label{fig:timeline}
+\end{figure*}
+
+Table~\ref{tab:gpu} compares the strategies in a separate experiment from
+Table~\ref{tab:m3}; absolute times differ between the two sessions, so comparisons
+are within each table. With 64\,KiB chunks \emph{gpu-blocked} resolves the windows
+$2.5\times$ faster than the CPU blocked scan and $7.0\times$ faster than the serial
+chain ($p < 0.001$); 24 of its 26\,ms are GPU execution. The whole run becomes
+$1.06\times$ faster than with the CPU scan ($p = 0.016$) and $1.22\times$ faster than
+with the serial chain. The gain over the CPU scan is $2.2\times$ at 128\,KiB and
+$1.6\times$ at 256\,KiB, and on Silesia at 64\,KiB $1.4\times$ for the step. From
+1\,MiB chunks up the GPU is not faster: each call has a fixed cost of about a
+millisecond, more than the whole step costs on the CPU there, and total time does not
+change. \emph{gpu-serial}, which performs the base paper's chain unchanged but
+resolves each window with 32\,768 threads, is already 3.0--5.1$\times$ faster than the
+CPU chain at 64--256\,KiB; the blocked scheme lowers it further from 36 to 26\,ms, but
+\emph{gpu-serial} varies too much between runs for that difference to be significant
+after correction. Fig.~\ref{fig:timeline} shows the effect on the timeline.
+
+Marker replacement, the largest stage after decoding, was not moved to the GPU: its
+input lives in ordinary memory that the decoder grows with \texttt{realloc}, and
+handing it to the GPU would cost a 2-byte copy per symbol, about as much traffic as the
+replacement itself.
+
 \subsection{M1: Overflow and Chunking Policies}
 
 \begin{table}[t]
@@ -517,13 +601,18 @@ ten minutes later, and the reported numbers are sustained rather than peak
 throughput. All results come from one machine with heterogeneous cores. Three of the
 five datasets are synthetic, though seeded and reproducible. rapidgzip was measured
 as a Python-wrapped tool on ARM without ISA-L; its x86 build is faster, and the
-comparison is of two complete tools rather than of the window step alone.
+comparison is of two complete tools rather than of the window step alone. The GPU
+experiment ran on battery power with Low Power Mode off; GPU times vary more between
+runs than CPU times, as the GPU idles during decoding. Each GPU decompressor keeps up
+to 0.5\,GB of buffers between calls, a memory cost for long-lived processes.
 
 \section{Conclusion and Future Scope}
 
 The window chain of two-stage gzip decompression is a prefix computation, not an
 inherently sequential one: window maps compose associatively, and a blocked parallel
-scan resolves them 2.9--3.9$\times$ faster than the chain on 10 cores. The gain
+scan resolves them 2.9--3.9$\times$ faster than the chain on 10 cores, and the same
+scan on the GPU, which also parallelises each step across the 32\,768 positions of a
+window, $7\times$ faster on 5\,205 chunks. The gain
 matters exactly when chunks are small, which is also when decompression uses the
 least memory, and it is negligible with chunks of a few MiB. Splitting
 oversized chunks removes the serialisation that output budgets cause when there are
@@ -543,9 +632,10 @@ Streaming the output in order instead of assembling it in memory would bound mem
 by the number of chunks in flight and close most of the memory gap to rapidgzip.
 Lowering Riptide's per-chunk overheads would make small chunks competitive. Porting
 M3 into rapidgzip would test it where those overheads are already low, on the 64 to
-128 cores at which the base paper sees its limit. Finally, window composition is a
-gather over 32\,KiB and maps naturally onto GPUs, which could resolve thousands of
-small chunks at once.
+128 cores at which the base paper sees its limit. The GPU version currently pays a
+fixed cost of about a millisecond per call, which batching with other GPU work or
+starting composition while chunks are still being decoded could hide, and it should be
+evaluated on discrete GPUs, where maps would have to be copied over PCIe.
 
 \begin{thebibliography}{00}
 \bibitem{rapidgzip} M. Knespel and H. Brunst, ``Rapidgzip: Parallel decompression and seeking in gzip files using cache prefetching,'' in \emph{Proc. 32nd Int. Symp. High-Performance Parallel and Distributed Computing (HPDC '23)}, Orlando, FL, USA, 2023, doi: 10.1145/3588195.3592992.
