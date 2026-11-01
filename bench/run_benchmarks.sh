@@ -64,10 +64,23 @@ for file in "$DATA/silesia_x5.tar.gz" "$DATA/logs.ndjson.gz"; do
 done
 if "$CLI" -t --window gpu-blocked "$DATA/silesia.tar.gz" 2>/dev/null; then
     echo "E6: CPU and GPU window resolution across chunk sizes"
-    "$BENCH" --threads 10 --chunk-sizes 64K,128K,256K,1M,4M \
-        --windows serial,blocked,gpu-serial,gpu-blocked \
-        --repetitions "$REPS" --output "$OUT/gpu_window.csv" \
-        "$DATA/silesia.tar.gz" "$DATA/silesia_x5.tar.gz"
+    # One chunk size per process: every GPU decompressor keeps its buffers (up to
+    # 0.5 GB on Silesia x 5) for reuse, and twenty decompressors alive at once
+    # pushed the machine into memory compression. Repetitions still interleave
+    # across the four strategies, which is what every comparison is between.
+    rm -f "$OUT/gpu_window.csv"
+    for chunk in 64K 128K 256K 1M 4M; do
+        "$BENCH" --threads 10 --chunk-sizes "$chunk" \
+            --windows serial,blocked,gpu-serial,gpu-blocked \
+            --repetitions "$REPS" --output "$OUT/gpu_window_part.csv" \
+            "$DATA/silesia.tar.gz" "$DATA/silesia_x5.tar.gz"
+        if [ -f "$OUT/gpu_window.csv" ]; then
+            tail -n +2 "$OUT/gpu_window_part.csv" >> "$OUT/gpu_window.csv"
+        else
+            mv "$OUT/gpu_window_part.csv" "$OUT/gpu_window.csv"
+        fi
+    done
+    rm -f "$OUT/gpu_window_part.csv"
 else
     echo "E6: skipped, no GPU support in this build"
 fi
