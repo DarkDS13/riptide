@@ -47,6 +47,8 @@ Verification and statistics:
       --json               print statistics as JSON to standard error
       --trace FILE         write a timeline of every thread to FILE, in the Chrome
                            trace format (open it in ui.perfetto.dev)
+      --repeat N           decompress N times and keep the last run, so that its
+                           statistics and trace show warm caches (default: 1)
   -h, --help               show this help
 )";
 
@@ -58,6 +60,7 @@ struct Arguments {
     bool verbose = false;
     bool json = false;
     std::string trace;
+    std::size_t repeat = 1;
     riptide::DecompressorOptions options;
 };
 
@@ -103,6 +106,8 @@ Arguments parse_arguments(int argc, char** argv) {
             args.json = true;
         } else if (token == "--trace") {
             args.trace = value();
+        } else if (token == "--repeat") {
+            args.repeat = cli::parse_count(value());
         } else if (!token.empty() && token.front() == '-') {
             throw std::invalid_argument("unknown option " + std::string(token));
         } else if (args.input.empty()) {
@@ -114,8 +119,8 @@ Arguments parse_arguments(int argc, char** argv) {
     if (args.input.empty()) {
         throw std::invalid_argument("no input file given");
     }
-    if (args.options.threads == 0 || args.options.chunk_size == 0) {
-        throw std::invalid_argument("threads and chunk size must be positive");
+    if (args.options.threads == 0 || args.options.chunk_size == 0 || args.repeat == 0) {
+        throw std::invalid_argument("threads, chunk size and repeat count must be positive");
     }
     return args;
 }
@@ -182,6 +187,9 @@ int main(int argc, char** argv) {
         }
 
         riptide::ParallelDecompressor decompressor(args.options);
+        for (std::size_t run = 1; run < args.repeat; ++run) {
+            static_cast<void>(decompressor.decompress(input.bytes()));
+        }
         std::optional<riptide::trace::Session> trace;
         if (!args.trace.empty()) {
             trace.emplace();
