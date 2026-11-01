@@ -33,7 +33,8 @@ Parallelism:
   -P, --threads N          worker threads (default: all hardware threads)
       --chunk-size SIZE    compressed bytes per chunk, e.g. 512K or 4M (default: 4M)
       --window STRATEGY    window resolution: serial, hillis-steele, blelloch,
-                           blocked (default: blocked)
+                           blocked, or on the GPU gpu-serial, gpu-blocked
+                           (default: blocked)
       --chunking POLICY    fixed or work-balanced (default: fixed)
       --overflow POLICY    serial or split (default: split)
       --max-expansion R    output budget per chunk, as a multiple of its
@@ -46,6 +47,8 @@ Verification and statistics:
       --json               print statistics as JSON to standard error
       --trace FILE         write a timeline of every thread to FILE, in the Chrome
                            trace format (open it in ui.perfetto.dev)
+      --repeat N           decompress N times and keep the last run, so that its
+                           statistics and trace show warm caches (default: 1)
   -h, --help               show this help
 )";
 
@@ -57,6 +60,7 @@ struct Arguments {
     bool verbose = false;
     bool json = false;
     std::string trace;
+    std::size_t repeat = 1;
     riptide::DecompressorOptions options;
 };
 
@@ -102,6 +106,8 @@ Arguments parse_arguments(int argc, char** argv) {
             args.json = true;
         } else if (token == "--trace") {
             args.trace = value();
+        } else if (token == "--repeat") {
+            args.repeat = cli::parse_count(value());
         } else if (!token.empty() && token.front() == '-') {
             throw std::invalid_argument("unknown option " + std::string(token));
         } else if (args.input.empty()) {
@@ -113,8 +119,8 @@ Arguments parse_arguments(int argc, char** argv) {
     if (args.input.empty()) {
         throw std::invalid_argument("no input file given");
     }
-    if (args.options.threads == 0 || args.options.chunk_size == 0) {
-        throw std::invalid_argument("threads and chunk size must be positive");
+    if (args.options.threads == 0 || args.options.chunk_size == 0 || args.repeat == 0) {
+        throw std::invalid_argument("threads, chunk size and repeat count must be positive");
     }
     return args;
 }
@@ -142,7 +148,7 @@ void print_statistics(const riptide::DecompressionStatistics& s, const riptide::
                  "  %-22s %9.1f MB/s\n"
                  "  chunks: %zu planned, %zu in chain, %zu fallback, %zu overflow splits, "
                  "%zu unused, %zu rejected candidates\n"
-                 "  window resolution: %zu rounds, %zu compositions; members: %zu\n"
+                 "  window resolution: %zu rounds, %zu compositions, %.4f s on the GPU; members: %zu\n"
                  "  first-stage load imbalance: %.2f\n"
                  "  thread pool: %llu tasks, %llu stolen\n",
                  o.threads, riptide::cli::format_size(o.chunk_size).c_str(),
@@ -154,7 +160,7 @@ void print_statistics(const riptide::DecompressionStatistics& s, const riptide::
                  "replace (second stage)", s.replace_seconds, "checksum", s.checksum_seconds, "total",
                  s.total_seconds, "throughput", s.throughput_mb_per_s(), s.planned_chunks,
                  s.chain_length, s.fallback_decodes, s.overflow_splits, s.unused_results,
-                 s.rejected_candidates, s.window_rounds, s.window_combinations, s.members,
+                 s.rejected_candidates, s.window_rounds, s.window_combinations, s.window_device_seconds, s.members,
                  s.decode_imbalance,
                  static_cast<unsigned long long>(s.pool.tasks_executed),
                  static_cast<unsigned long long>(s.pool.tasks_stolen));
@@ -181,6 +187,9 @@ int main(int argc, char** argv) {
         }
 
         riptide::ParallelDecompressor decompressor(args.options);
+        for (std::size_t run = 1; run < args.repeat; ++run) {
+            static_cast<void>(decompressor.decompress(input.bytes()));
+        }
         std::optional<riptide::trace::Session> trace;
         if (!args.trace.empty()) {
             trace.emplace();

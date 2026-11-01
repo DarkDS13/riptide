@@ -230,6 +230,39 @@ def window_threads(rows):
     return out, finish(comparisons)
 
 
+def gpu_window(rows):
+    """E6: CPU and GPU window resolution per file and chunk size."""
+    g = group(rows)
+    out, comparisons = {}, []
+    pairs = (("gpu-blocked", "blocked"), ("gpu-serial", "serial"), ("gpu-blocked", "gpu-serial"))
+    for f in sorted({r["file"] for r in rows}):
+        out[f] = []
+        for chunk in sorted({k[3] for k in g if k[0] == f}):
+            cell = {k[4]: v for k, v in g.items() if k[0] == f and k[3] == chunk}
+            item = {"chunk_size": chunk, "chunks": int(median(stat(cell["serial"], "chain_length"))),
+                    "strategies": {}}
+            for strategy, v in cell.items():
+                item["strategies"][strategy] = {
+                    "window_seconds": median(stat(v, "window_seconds")),
+                    "window_iqr": iqr(stat(v, "window_seconds")),
+                    "device_seconds": median(stat(v, "window_device_seconds")),
+                    "window_map_seconds": median(stat(v, "window_map_seconds")),
+                    "total_seconds": median(seconds(v)),
+                    "total_iqr": iqr(seconds(v)),
+                    "rounds": int(median(stat(v, "window_rounds"))),
+                    "combinations": int(median(stat(v, "window_combinations"))),
+                }
+            for candidate, baseline in pairs:
+                comparisons.append(compare(f"{f} {chunk // 1024} KiB window step: {candidate} vs {baseline}",
+                                           cell[baseline], cell[candidate],
+                                           lambda runs: stat(runs, "window_seconds")))
+                if baseline == "blocked":
+                    comparisons.append(compare(f"{f} {chunk // 1024} KiB total: {candidate} vs {baseline}",
+                                               cell[baseline], cell[candidate], seconds))
+            out[f].append(item)
+    return out, finish(comparisons)
+
+
 def m1_policies(rows):
     g = group(rows)
     out, comparisons = {}, []
@@ -368,6 +401,23 @@ def markdown(summary):
                   "|---|---|---|---|---|"]
         for m in summary["memory"]:
             lines.append(f"| {m['file']} | {m['chunk_size']} | {m['overflow']} | {m['max_rss_mb']:.0f} | {m['rss_over_output']:.2f} |")
+    if summary.get("gpu_window"):
+        lines += ["", "## E6 CPU and GPU window resolution (10 threads)", "",
+                  "| File | Chunk | Chunks | Strategy | Window ms | IQR | GPU ms | Dependent steps | Total ms |",
+                  "|---|---|---|---|---|---|---|---|---|"]
+        for f, items in summary["gpu_window"].items():
+            for item in items:
+                for s_name in ("serial", "blocked", "gpu-serial", "gpu-blocked"):
+                    v = item["strategies"][s_name]
+                    lines.append(f"| {f} | {item['chunk_size'] // 1024} KiB | {item['chunks']} | {s_name} | "
+                                 f"{v['window_seconds'] * 1e3:.2f} | {v['window_iqr'] * 1e3:.2f} | "
+                                 f"{v['device_seconds'] * 1e3:.2f} | {v['rounds']} | {v['total_seconds'] * 1e3:.1f} |")
+        lines += ["", "## E6 comparisons (Mann-Whitney U, Holm-corrected)", "",
+                  "| Comparison | Baseline median | Candidate median | Ratio | p (Holm) | Significant |",
+                  "|---|---|---|---|---|---|"]
+        for c in summary["gpu_window_tests"]:
+            lines.append(f"| {c['name']} | {c['baseline_median'] * 1e3:.3f} ms | {c['candidate_median'] * 1e3:.3f} ms | "
+                         f"{c['ratio']:.2f}x | {c['p_holm']:.2g} | {'yes' if c['significant'] else 'no'} |")
     if summary.get("rapidgzip_scaling"):
         r = summary["rapidgzip_scaling"]
         lines += ["", "## R1 riptide and rapidgzip 0.16.0, 4 MiB chunks (process wall time minus start-up)", "",
@@ -404,12 +454,16 @@ def main():
     thread_rows = load(path("window_threads.csv"))
     m1_rows = load(path("m1_policies.csv"))
 
-    summary = {"correctness": correctness(scaling_rows + chunk_rows + thread_rows + m1_rows)}
+    gpu_rows = load(path("gpu_window.csv")) if os.path.exists(path("gpu_window.csv")) else []
+
+    summary = {"correctness": correctness(scaling_rows + chunk_rows + thread_rows + m1_rows + gpu_rows)}
     summary["scaling"] = scaling(scaling_rows)
     summary["window_chunks"], summary["window_chunks_tests"] = window_chunks(chunk_rows)
     summary["window_threads"], summary["window_threads_tests"] = window_threads(thread_rows)
     summary["m1"], summary["m1_tests"] = m1_policies(m1_rows)
     summary["m1_budget"], summary["m1_budget_tests"] = m1_policies(load(path("m1_budget.csv")))
+    if gpu_rows:
+        summary["gpu_window"], summary["gpu_window_tests"] = gpu_window(gpu_rows)
     if os.path.exists(path("memory.csv")):
         summary["memory"] = memory(path("memory.csv"))
     if os.path.exists(path("rapidgzip_scaling.csv")):

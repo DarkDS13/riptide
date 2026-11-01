@@ -1,15 +1,17 @@
 // Tests of the parallel runtime and of window resolution: thread pool, task groups,
 // parallel_for, the prefix scans, the window-map algebra behind M3, and tracing.
 
+#include <algorithm>
 #include <atomic>
-#include <functional>
 #include <cstdint>
+#include <functional>
 #include <random>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 
 #include <riptide/common/trace.hpp>
+#include <riptide/gpu/gpu_window_resolver.hpp>
 #include <riptide/parallel/prefix_scan.hpp>
 #include <riptide/parallel/task_group.hpp>
 #include <riptide/parallel/thread_pool.hpp>
@@ -200,13 +202,55 @@ RIPTIDE_TEST(window_resolver, every_strategy_resolves_identical_windows) {
         for (const auto strategy : {WindowStrategy::kHillisSteele, WindowStrategy::kBlelloch,
                                     WindowStrategy::kBlocked}) {
             const auto other = resolve_windows(pool, first, maps, strategy);
-            if (other.windows != serial.windows) {
+            if (!std::ranges::equal(other.windows, serial.windows)) {
                 test::report_failure(__FILE__, __LINE__,
                                      std::string(to_string(strategy)) + " differs for " +
                                          std::to_string(chunks) + " chunks");
             }
         }
     }
+}
+
+RIPTIDE_TEST(window_resolver, gpu_strategies_match_the_serial_chain) {
+    if (!GpuWindowResolver::available()) {
+        return;  // no GPU on this machine or in this build
+    }
+    const GpuWindowResolver gpu;
+    std::mt19937 engine(13);
+    ThreadPool pool(2);
+    for (const std::size_t chunks : {0U, 1U, 2U, 3U, 17U, 64U, 131U, 500U}) {
+        std::vector<SymbolWindowPtr> maps;
+        for (std::size_t k = 0; k < chunks; ++k) {
+            maps.push_back(random_map(engine, k % 5 == 4 ? 0.0 : 0.3));
+        }
+        const ByteWindow first = random_window(engine);
+        const auto serial = resolve_windows(pool, first, maps, WindowStrategy::kSerial);
+        for (const auto strategy : {WindowStrategy::kGpuSerial, WindowStrategy::kGpuBlocked}) {
+            const GpuWindowResolver::Maps gpu_maps = gpu.allocate_maps(maps.size());
+            for (std::size_t k = 0; k < maps.size(); ++k) {
+                std::copy(maps[k]->symbols.begin(), maps[k]->symbols.end(), gpu_maps.map(k));
+            }
+            const auto other = gpu.resolve(first, gpu_maps, strategy);
+            if (!std::ranges::equal(other.windows, serial.windows)) {
+                test::report_failure(__FILE__, __LINE__,
+                                     std::string(to_string(strategy)) + " differs for " +
+                                         std::to_string(chunks) + " chunks");
+            }
+            if (strategy == WindowStrategy::kGpuSerial) {
+                CHECK_EQ(other.cost.rounds, chunks);
+            }
+        }
+    }
+}
+
+RIPTIDE_TEST(window_resolver, gpu_block_count_minimises_dependent_steps) {
+    CHECK_EQ(gpu_block_count(WindowStrategy::kGpuSerial, 5000), 1U);
+    CHECK_EQ(gpu_block_count(WindowStrategy::kGpuBlocked, 0), 1U);
+    CHECK_EQ(gpu_block_count(WindowStrategy::kGpuBlocked, 1), 1U);
+    CHECK_EQ(gpu_block_count(WindowStrategy::kGpuBlocked, 5000), 100U);  // sqrt(2 * 5000)
+    ThreadPool pool(1);
+    CHECK_THROWS(static_cast<void>(resolve_windows(pool, ByteWindow{}, {}, WindowStrategy::kGpuBlocked)),
+                 std::invalid_argument);
 }
 
 RIPTIDE_TEST(trace, records_scopes_from_every_thread) {

@@ -93,9 +93,9 @@ private:
 /// State of one decompress() call.
 class DecompressionRun {
 public:
-    DecompressionRun(ThreadPool& pool, const DecompressorOptions& options,
-                     std::span<const std::uint8_t> input)
-        : pool_(pool), options_(options), input_(input) {}
+    DecompressionRun(ThreadPool& pool, const GpuWindowResolver* gpu,
+                     const DecompressorOptions& options, std::span<const std::uint8_t> input)
+        : pool_(pool), gpu_(gpu), options_(options), input_(input) {}
 
     DecompressionResult execute() {
         const Stopwatch total;
@@ -134,6 +134,7 @@ public:
         const WindowResolution resolution = resolve();
         stats_.window_seconds = resolution_seconds_;
         stats_.window_map_seconds = stage.seconds() - resolution_seconds_;
+        stats_.window_device_seconds = resolution.device_seconds;
 
         stage.restart();
         DecompressionResult result;
@@ -321,19 +322,34 @@ private:
         }
 
         const trace::Scope stage_scope("windows", "stage");
-        std::vector<SymbolWindowPtr> maps(chain_.size() - 1);
-        parallel_for(pool_, 0, maps.size(), 1, [&](std::size_t lo, std::size_t hi) {
-            const trace::Scope scope("window maps", "window", {"maps", static_cast<std::int64_t>(hi - lo)});
-            for (std::size_t k = lo; k < hi; ++k) {
-                maps[k] = final_window_of(chain_[k + 1]->data);
-            }
-        });
-
+        const std::size_t count = chain_.size() - 1;
+        WindowResolution resolution;
         // Only the resolution itself is the step under study; building the maps
-        // above is independent per chunk and fully parallel.
-        const Stopwatch resolution_time;
-        WindowResolution resolution = resolve_windows(pool_, first, maps, options_.window_strategy);
-        resolution_seconds_ = resolution_time.seconds();
+        // before it is independent per chunk and fully parallel.
+        if (gpu_ != nullptr) {
+            // The maps are written straight into memory the GPU reads.
+            const GpuWindowResolver::Maps maps = gpu_->allocate_maps(count);
+            parallel_for(pool_, 0, count, 1, [&](std::size_t lo, std::size_t hi) {
+                const trace::Scope scope("window maps", "window", {"maps", static_cast<std::int64_t>(hi - lo)});
+                for (std::size_t k = lo; k < hi; ++k) {
+                    static_cast<void>(write_final_window(chain_[k + 1]->data, maps.map(k)));
+                }
+            });
+            const Stopwatch resolution_time;
+            resolution = gpu_->resolve(first, maps, options_.window_strategy);
+            resolution_seconds_ = resolution_time.seconds();
+        } else {
+            std::vector<SymbolWindowPtr> maps(count);
+            parallel_for(pool_, 0, count, 1, [&](std::size_t lo, std::size_t hi) {
+                const trace::Scope scope("window maps", "window", {"maps", static_cast<std::int64_t>(hi - lo)});
+                for (std::size_t k = lo; k < hi; ++k) {
+                    maps[k] = final_window_of(chain_[k + 1]->data);
+                }
+            });
+            const Stopwatch resolution_time;
+            resolution = resolve_windows(pool_, first, maps, options_.window_strategy);
+            resolution_seconds_ = resolution_time.seconds();
+        }
         stats_.window_rounds = resolution.cost.rounds;
         stats_.window_combinations = resolution.cost.combinations;
         return resolution;
@@ -464,6 +480,7 @@ private:
     }
 
     ThreadPool& pool_;
+    const GpuWindowResolver* gpu_;
     const DecompressorOptions& options_;
     std::span<const std::uint8_t> input_;
 
@@ -482,10 +499,12 @@ private:
 }  // namespace
 
 ParallelDecompressor::ParallelDecompressor(DecompressorOptions options)
-    : options_(options), pool_(options.threads) {}
+    : options_(options),
+      pool_(options.threads),
+      gpu_(is_gpu(options.window_strategy) ? std::make_unique<GpuWindowResolver>() : nullptr) {}
 
 DecompressionResult ParallelDecompressor::decompress(std::span<const std::uint8_t> gzip) {
-    DecompressionRun run(pool_, options_, gzip);
+    DecompressionRun run(pool_, gpu_.get(), options_, gzip);
     return run.execute();
 }
 

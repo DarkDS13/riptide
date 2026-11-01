@@ -19,7 +19,8 @@ std::string DecompressionStatistics::to_json() const {
     out << '{' << "\"partition_seconds\":" << partition_seconds
         << ",\"decode_seconds\":" << decode_seconds << ",\"chain_seconds\":" << chain_seconds
         << ",\"window_map_seconds\":" << window_map_seconds
-        << ",\"window_seconds\":" << window_seconds << ",\"replace_seconds\":" << replace_seconds
+        << ",\"window_seconds\":" << window_seconds
+        << ",\"window_device_seconds\":" << window_device_seconds << ",\"replace_seconds\":" << replace_seconds
         << ",\"checksum_seconds\":" << checksum_seconds << ",\"total_seconds\":" << total_seconds
         << ",\"compressed_bytes\":" << compressed_bytes
         << ",\"decompressed_bytes\":" << decompressed_bytes << ",\"members\":" << members

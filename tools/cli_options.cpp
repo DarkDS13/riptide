@@ -61,12 +61,13 @@ std::size_t parse_size(std::string_view text) {
 
 WindowStrategy parse_window_strategy(std::string_view text) {
     for (const auto strategy : {WindowStrategy::kSerial, WindowStrategy::kHillisSteele,
-                                WindowStrategy::kBlelloch, WindowStrategy::kBlocked}) {
+                                WindowStrategy::kBlelloch, WindowStrategy::kBlocked,
+                                WindowStrategy::kGpuSerial, WindowStrategy::kGpuBlocked}) {
         if (text == to_string(strategy)) {
             return strategy;
         }
     }
-    fail("window strategy (serial, hillis-steele, blelloch, blocked)", text);
+    fail("window strategy (serial, hillis-steele, blelloch, blocked, gpu-serial, gpu-blocked)", text);
 }
 
 ChunkingPolicy parse_chunking(std::string_view text) {

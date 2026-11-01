@@ -24,6 +24,7 @@ COLOURS = {
     "gpu": (204, 62, 62),
     "replace": (70, 160, 90),
     "verify": (140, 90, 180),
+    "wait": (205, 205, 205),
 }
 STAGE_COLOURS = {
     "partition": (210, 210, 210),
@@ -35,7 +36,7 @@ STAGE_COLOURS = {
 }
 LEGEND = [("decode", "decode chunk"), ("window", "window resolution (CPU)"),
           ("gpu", "window resolution (GPU)"), ("replace", "marker replacement"),
-          ("verify", "CRC-32"), ("chain", "chain / fallback")]
+          ("verify", "CRC-32"), ("chain", "chain / fallback"), ("wait", "waiting for the GPU")]
 
 
 def font(size):
@@ -82,7 +83,7 @@ def main():
 
     scale = 2
     label_w, right, top, row_h, gap = 150 * scale, 30 * scale, 70 * scale, 26 * scale, 6 * scale
-    stage_h, axis_h, legend_h = 26 * scale, 40 * scale, 40 * scale
+    stage_h, axis_h, legend_h = 26 * scale, 40 * scale, 64 * scale
     width = args.width
     height = top + stage_h + gap + len(tids) * (row_h + gap) + axis_h + legend_h
     image = Image.new("RGB", (width, height), "white")
@@ -144,15 +145,20 @@ def main():
     y += axis_h
 
     lx = label_w
-    for category, label in LEGEND:
-        if not any(e["cat"] == category for e in work):
+    entries = [(c, l) for c, l in LEGEND if any(e["cat"] == c for e in work)]
+    if instants:
+        entries.append((None, "work steal"))
+    for category, label in entries:
+        entry_w = 24 * scale + draw.textlength(label, font=small) + 30 * scale
+        if lx + entry_w > width - right:  # wrap onto a second legend line
+            lx, y = label_w, y + 24 * scale
+        if category is None:
+            draw.line([lx, y, lx, y + 14 * scale], fill="black", width=scale)
+            draw.text((lx + 8 * scale, y), label, fill="black", font=small)
             continue
         draw.rectangle([lx, y, lx + 18 * scale, y + 14 * scale], fill=COLOURS[category])
         draw.text((lx + 24 * scale, y), label, fill="black", font=small)
-        lx += 24 * scale + draw.textlength(label, font=small) + 30 * scale
-    if instants:
-        draw.line([lx, y, lx, y + 14 * scale], fill="black", width=scale)
-        draw.text((lx + 8 * scale, y), "work steal", fill="black", font=small)
+        lx += entry_w
 
     image.save(args.output)
 

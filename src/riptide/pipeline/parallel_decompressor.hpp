@@ -5,6 +5,7 @@
 #include <memory>
 #include <span>
 
+#include <riptide/gpu/gpu_window_resolver.hpp>
 #include <riptide/parallel/thread_pool.hpp>
 #include <riptide/pipeline/options.hpp>
 #include <riptide/pipeline/statistics.hpp>
@@ -30,7 +31,8 @@ struct DecompressionResult {
 ///   3. Chain       link chunks whose end and start denote the same block, decoding
 ///                  any gap serially (false positives of the block finder);
 ///   4. Windows     resolve the window before every chunk, serially or by a
-///                  parallel prefix scan over window maps (M3);
+///                  parallel prefix scan over window maps (M3), on the CPU or
+///                  the GPU;
 ///   5. Replace     resolve markers and assemble the output, in parallel;
 ///   6. Verify      CRC-32 of every gzip member, in parallel via crc32_combine.
 ///
@@ -38,6 +40,8 @@ struct DecompressionResult {
 /// raises ChecksumError, and invalid input raises DecodeError.
 class ParallelDecompressor {
 public:
+    /// A GPU window strategy also sets up the GPU here, outside decompress(); it
+    /// throws std::runtime_error if no GPU is available.
     explicit ParallelDecompressor(DecompressorOptions options = {});
 
     [[nodiscard]] DecompressionResult decompress(std::span<const std::uint8_t> gzip);
@@ -47,6 +51,7 @@ public:
 private:
     DecompressorOptions options_;
     ThreadPool pool_;
+    std::unique_ptr<GpuWindowResolver> gpu_;  ///< Only for the GPU window strategies.
 };
 
 }  // namespace riptide

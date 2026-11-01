@@ -33,7 +33,8 @@ constexpr std::string_view kUsage = R"(Usage: riptide_bench [options] FILE.gz...
 Lists are comma-separated; every combination is measured.
   --threads LIST           worker threads (default: 1,2,4,8,<hardware>)
   --chunk-sizes LIST       chunk sizes, e.g. 512K,4M (default: 4M)
-  --windows LIST           serial,hillis-steele,blelloch,blocked (default: serial,blocked)
+  --windows LIST           serial,hillis-steele,blelloch,blocked,gpu-serial,gpu-blocked
+                           (default: serial,blocked)
   --chunking LIST          fixed,work-balanced (default: fixed)
   --overflow LIST          serial,split (default: split)
   --max-expansion R        output budget multiple (default: 20)

@@ -10,6 +10,8 @@
 #   E4 m1_policies.csv     chunking and overflow policies (M1) on high-ratio and mixed data
 #      m1_budget.csv       overflow policies under a tight output budget, few chunks per thread
 #   E5 memory.csv          peak resident memory per configuration (via /usr/bin/time)
+#   E6 gpu_window.csv      CPU and GPU window resolution across chunk sizes, 10 threads
+#                          (skipped if the build has no GPU support)
 set -euo pipefail
 
 BUILD=${1:?build directory}
@@ -60,4 +62,26 @@ for file in "$DATA/silesia_x5.tar.gz" "$DATA/logs.ndjson.gz"; do
         done
     done
 done
+if "$CLI" -t --window gpu-blocked "$DATA/silesia.tar.gz" 2>/dev/null; then
+    echo "E6: CPU and GPU window resolution across chunk sizes"
+    # One chunk size per process: every GPU decompressor keeps its buffers (up to
+    # 0.5 GB on Silesia x 5) for reuse, and twenty decompressors alive at once
+    # pushed the machine into memory compression. Repetitions still interleave
+    # across the four strategies, which is what every comparison is between.
+    rm -f "$OUT/gpu_window.csv"
+    for chunk in 64K 128K 256K 1M 4M; do
+        "$BENCH" --threads 10 --chunk-sizes "$chunk" \
+            --windows serial,blocked,gpu-serial,gpu-blocked \
+            --repetitions "$REPS" --output "$OUT/gpu_window_part.csv" \
+            "$DATA/silesia.tar.gz" "$DATA/silesia_x5.tar.gz"
+        if [ -f "$OUT/gpu_window.csv" ]; then
+            tail -n +2 "$OUT/gpu_window_part.csv" >> "$OUT/gpu_window.csv"
+        else
+            mv "$OUT/gpu_window_part.csv" "$OUT/gpu_window.csv"
+        fi
+    done
+    rm -f "$OUT/gpu_window_part.csv"
+else
+    echo "E6: skipped, no GPU support in this build"
+fi
 echo "done: results in $OUT"

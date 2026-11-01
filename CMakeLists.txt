@@ -19,6 +19,16 @@ option(RIPTIDE_BUILD_TOOLS "Build the command-line tool and benchmark driver" ON
 option(RIPTIDE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 option(RIPTIDE_SANITIZE "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 option(RIPTIDE_SANITIZE_THREAD "Build with ThreadSanitizer" OFF)
+option(RIPTIDE_GPU "Build GPU window resolution (Metal; Apple platforms only)" ON)
+
+if(RIPTIDE_GPU AND APPLE)
+    enable_language(OBJCXX)
+    set(CMAKE_OBJCXX_STANDARD 20)
+    set(CMAKE_OBJCXX_STANDARD_REQUIRED ON)
+    set(RIPTIDE_HAS_GPU ON)
+else()
+    set(RIPTIDE_HAS_GPU OFF)
+endif()
 
 find_package(Threads REQUIRED)
 # zlib is only used as an independent reference: by the tests to produce and
@@ -48,6 +58,14 @@ add_library(riptide STATIC
     src/riptide/window/window.cpp
     src/riptide/window/window_resolver.cpp
 )
+if(RIPTIDE_HAS_GPU)
+    target_sources(riptide PRIVATE src/riptide/gpu/gpu_window_resolver.mm)
+    set_source_files_properties(src/riptide/gpu/gpu_window_resolver.mm PROPERTIES
+        COMPILE_OPTIONS "-fobjc-arc")
+    target_link_libraries(riptide PUBLIC "-framework Metal" "-framework Foundation")
+else()
+    target_sources(riptide PRIVATE src/riptide/gpu/gpu_window_resolver_stub.cpp)
+endif()
 target_include_directories(riptide PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_options(riptide PRIVATE ${RIPTIDE_WARNINGS})
 target_link_libraries(riptide PUBLIC Threads::Threads)
