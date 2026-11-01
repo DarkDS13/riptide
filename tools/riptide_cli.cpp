@@ -3,13 +3,16 @@
 #include <cstdio>
 #include <cstring>
 #include <exception>
+#include <fstream>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 
 #include <riptide/common/error.hpp>
 #include <riptide/common/timer.hpp>
+#include <riptide/common/trace.hpp>
 #include <riptide/io/mapped_file.hpp>
 #include <riptide/pipeline/parallel_decompressor.hpp>
 #include <riptide/pipeline/sequential_decompressor.hpp>
@@ -41,6 +44,8 @@ Verification and statistics:
       --no-verify          skip CRC-32 and size checks
   -v, --verbose            print per-stage timings to standard error
       --json               print statistics as JSON to standard error
+      --trace FILE         write a timeline of every thread to FILE, in the Chrome
+                           trace format (open it in ui.perfetto.dev)
   -h, --help               show this help
 )";
 
@@ -51,6 +56,7 @@ struct Arguments {
     bool sequential = false;
     bool verbose = false;
     bool json = false;
+    std::string trace;
     riptide::DecompressorOptions options;
 };
 
@@ -94,6 +100,8 @@ Arguments parse_arguments(int argc, char** argv) {
             args.verbose = true;
         } else if (token == "--json") {
             args.json = true;
+        } else if (token == "--trace") {
+            args.trace = value();
         } else if (!token.empty() && token.front() == '-') {
             throw std::invalid_argument("unknown option " + std::string(token));
         } else if (args.input.empty()) {
@@ -173,7 +181,23 @@ int main(int argc, char** argv) {
         }
 
         riptide::ParallelDecompressor decompressor(args.options);
+        std::optional<riptide::trace::Session> trace;
+        if (!args.trace.empty()) {
+            trace.emplace();
+        }
         const riptide::DecompressionResult result = decompressor.decompress(input.bytes());
+        if (trace) {
+            trace->stop();
+            std::ofstream out(args.trace);
+            trace->write_json(out);
+            if (!out) {
+                throw std::runtime_error("cannot write trace to '" + args.trace + "'");
+            }
+            if (args.verbose) {
+                std::fprintf(stderr, "riptide: %zu trace events written to %s\n", trace->event_count(),
+                             args.trace.c_str());
+            }
+        }
         if (args.verbose) {
             print_statistics(result.statistics, args.options);
         }
