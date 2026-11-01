@@ -12,6 +12,7 @@
 
 #include <riptide/common/error.hpp>
 #include <riptide/common/timer.hpp>
+#include <riptide/common/trace.hpp>
 #include <riptide/gzip/crc32.hpp>
 #include <riptide/gzip/gzip_format.hpp>
 #include <riptide/inflate/block_finder.hpp>
@@ -107,17 +108,26 @@ public:
         const std::size_t deflate_begin = header.size;
 
         Stopwatch stage;
-        plan(deflate_begin);
+        {
+            const trace::Scope scope("partition", "stage");
+            plan(deflate_begin);
+        }
         stats_.partition_seconds = stage.seconds();
 
         stage.restart();
         const std::vector<double> busy_before = pool_.busy_seconds();
-        decode_chunks(deflate_begin);
+        {
+            const trace::Scope scope("decode", "stage");
+            decode_chunks(deflate_begin);
+        }
         stats_.decode_seconds = stage.seconds();
         stats_.decode_imbalance = imbalance(busy_before, pool_.busy_seconds());
 
         stage.restart();
-        link_chain(deflate_begin);
+        {
+            const trace::Scope scope("chain", "stage");
+            link_chain(deflate_begin);
+        }
         stats_.chain_seconds = stage.seconds();
 
         stage.restart();
@@ -126,11 +136,18 @@ public:
         stats_.window_map_seconds = stage.seconds() - resolution_seconds_;
 
         stage.restart();
-        DecompressionResult result = assemble(resolution);
+        DecompressionResult result;
+        {
+            const trace::Scope scope("replace", "stage");
+            result = assemble(resolution);
+        }
         stats_.replace_seconds = stage.seconds();
 
         stage.restart();
-        verify_members(result);
+        {
+            const trace::Scope scope("verify", "stage");
+            verify_members(result);
+        }
         stats_.checksum_seconds = stage.seconds();
 
         stats_.total_seconds = total.seconds();
@@ -187,6 +204,8 @@ private:
             }
             if (chunk->reason == StopReason::kOutputBudget) {
                 overflow_splits_.fetch_add(1, std::memory_order_relaxed);
+                trace::instant("overflow split", "decode",
+                               {"output_bytes", static_cast<std::int64_t>(chunk->data.size())});
                 schedule_remainder(group, *chunk, range.stop_bit);
             }
             store_.insert(std::move(chunk));
@@ -194,6 +213,17 @@ private:
     }
 
     std::unique_ptr<ChunkResult> decode(const DecodeRange& range) {
+        const std::size_t first_byte = (range.exact_start ? range.exact_start->bit : range.search_begin_bit) / 8;
+        trace::Scope scope(range.exact_start ? "decode chunk" : "find + decode chunk", "decode",
+                           {"compressed_offset", static_cast<std::int64_t>(first_byte)});
+        std::unique_ptr<ChunkResult> chunk = decode_unlabelled(range);
+        if (chunk) {
+            scope.set({"output_bytes", static_cast<std::int64_t>(chunk->data.size())});
+        }
+        return chunk;
+    }
+
+    std::unique_ptr<ChunkResult> decode_unlabelled(const DecodeRange& range) {
         ChunkLimits limits;
         limits.stop_bit = range.stop_bit;
         limits.output_budget = budget_;
@@ -266,6 +296,7 @@ private:
             current = store_.take(next);
             if (!current) {
                 ++stats_.fallback_decodes;
+                const trace::Scope scope("fallback decode", "chain");
                 ChunkLimits limits;
                 limits.stop_bit = next_planned_stop(next.bit);
                 limits.output_budget = budget_;
@@ -289,8 +320,10 @@ private:
             first[i] = static_cast<std::uint8_t>(first_map->symbols[i]);
         }
 
+        const trace::Scope stage_scope("windows", "stage");
         std::vector<SymbolWindowPtr> maps(chain_.size() - 1);
         parallel_for(pool_, 0, maps.size(), 1, [&](std::size_t lo, std::size_t hi) {
+            const trace::Scope scope("window maps", "window", {"maps", static_cast<std::int64_t>(hi - lo)});
             for (std::size_t k = lo; k < hi; ++k) {
                 maps[k] = final_window_of(chain_[k + 1]->data);
             }
@@ -357,6 +390,9 @@ private:
                 const Piece& piece = pieces[p];
                 ChunkData& data = chain_[piece.chunk]->data;
                 const std::size_t length = piece.to - piece.from;
+                const trace::Scope scope(piece.marked ? "replace markers" : "copy", "replace",
+                                         {"chunk", static_cast<std::int64_t>(piece.chunk)},
+                                         {"bytes", static_cast<std::int64_t>(length)});
                 if (piece.marked) {
                     // Chunk 0 is decoded with a known window and never holds markers.
                     replace_markers(std::span(data.marked).subspan(kWindowSize + piece.from, length),
@@ -407,6 +443,7 @@ private:
 
         const std::uint8_t* data = result.buffer.get();
         parallel_for(pool_, 0, blocks.size(), 1, [&](std::size_t lo, std::size_t hi) {
+            const trace::Scope scope("crc32", "verify", {"blocks", static_cast<std::int64_t>(hi - lo)});
             for (std::size_t b = lo; b < hi; ++b) {
                 blocks[b].crc = crc32_update(0, std::span(data + blocks[b].from, blocks[b].to - blocks[b].from));
             }

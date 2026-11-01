@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include <riptide/common/trace.hpp>
 #include <riptide/parallel/task_group.hpp>
 
 namespace riptide {
@@ -12,6 +13,7 @@ WindowResolution resolve_serial(const ByteWindow& first, std::span<const SymbolW
     WindowResolution result;
     result.windows.resize(maps.size() + 1);
     result.windows[0] = first;
+    const trace::Scope scope("serial chain", "window", {"maps", static_cast<std::int64_t>(maps.size())});
     for (std::size_t k = 1; k <= maps.size(); ++k) {
         apply(*maps[k - 1], result.windows[k - 1], result.windows[k]);
     }
@@ -26,11 +28,15 @@ WindowResolution resolve_by_scan(ThreadPool& pool, const ByteWindow& first,
                                  std::span<const SymbolWindowPtr> maps, Scan&& scan) {
     std::vector<SymbolWindowPtr> prefix(maps.begin(), maps.end());
     WindowResolution result;
-    result.cost = scan(prefix);
+    {
+        const trace::Scope scope("scan", "window", {"maps", static_cast<std::int64_t>(maps.size())});
+        result.cost = scan(prefix);
+    }
 
     result.windows.resize(maps.size() + 1);
     result.windows[0] = first;
     parallel_for(pool, 0, prefix.size(), 1, [&](std::size_t lo, std::size_t hi) {
+        const trace::Scope scope("apply prefixes", "window", {"maps", static_cast<std::int64_t>(hi - lo)});
         for (std::size_t k = lo; k < hi; ++k) {
             apply(*prefix[k], first, result.windows[k + 1]);
         }
@@ -59,6 +65,7 @@ WindowResolution resolve_blocked(ThreadPool& pool, const ByteWindow& first,
     std::vector<SymbolWindowPtr> block_maps(blocks);
     parallel_for(pool, 0, blocks, 1, [&](std::size_t lo, std::size_t hi) {
         for (std::size_t b = lo; b < hi; ++b) {
+            const trace::Scope scope("compose block", "window", {"block", static_cast<std::int64_t>(b)});
             SymbolWindowPtr total = identity_window();
             for (std::size_t k = block_begin(b); k < block_begin(b + 1); ++k) {
                 total = compose(total, maps[k]);
@@ -70,12 +77,16 @@ WindowResolution resolve_blocked(ThreadPool& pool, const ByteWindow& first,
     // entering[b] is the window before the first chunk of block b.
     std::vector<ByteWindow> entering(blocks);
     entering[0] = first;
-    for (std::size_t b = 1; b < blocks; ++b) {
-        apply(*block_maps[b - 1], entering[b - 1], entering[b]);
+    {
+        const trace::Scope scope("carry between blocks", "window", {"blocks", static_cast<std::int64_t>(blocks)});
+        for (std::size_t b = 1; b < blocks; ++b) {
+            apply(*block_maps[b - 1], entering[b - 1], entering[b]);
+        }
     }
 
     parallel_for(pool, 0, blocks, 1, [&](std::size_t lo, std::size_t hi) {
         for (std::size_t b = lo; b < hi; ++b) {
+            const trace::Scope scope("resolve block", "window", {"block", static_cast<std::int64_t>(b)});
             const ByteWindow* previous = &entering[b];
             for (std::size_t k = block_begin(b); k < block_begin(b + 1); ++k) {
                 apply(*maps[k], *previous, result.windows[k + 1]);
