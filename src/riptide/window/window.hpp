@@ -48,6 +48,10 @@ void apply(const SymbolWindow& map, const ByteWindow& previous, ByteWindow& outp
 /// For a chunk decoded with a known window, the result is concrete.
 [[nodiscard]] SymbolWindowPtr final_window_of(const ChunkData& chunk);
 
+/// Writes the same map as final_window_of() to `symbols` (kWindowSize entries), for
+/// maps that live in memory shared with the GPU. Returns whether it is concrete.
+bool write_final_window(const ChunkData& chunk, std::uint16_t* symbols) noexcept;
+
 /// Second decoding stage: writes `symbols` as bytes to `output`, resolving each
 /// marker through `window`.
 void replace_markers(std::span<const std::uint16_t> symbols, const ByteWindow& window,

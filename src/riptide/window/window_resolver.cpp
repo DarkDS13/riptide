@@ -1,6 +1,7 @@
 #include <riptide/window/window_resolver.hpp>
 
 #include <algorithm>
+#include <stdexcept>
 
 #include <riptide/common/trace.hpp>
 #include <riptide/parallel/task_group.hpp>
@@ -8,14 +9,23 @@
 namespace riptide {
 namespace {
 
+/// Allocates the `count` windows of a resolution in host memory.
+std::span<ByteWindow> allocate_windows(WindowResolution& result, std::size_t count) {
+    auto storage = std::make_shared<std::vector<ByteWindow>>(count);
+    const std::span<ByteWindow> windows(*storage);
+    result.windows = windows;
+    result.storage = std::move(storage);
+    return windows;
+}
+
 /// Base paper: W_k = f_k(W_{k-1}), strictly one after another.
 WindowResolution resolve_serial(const ByteWindow& first, std::span<const SymbolWindowPtr> maps) {
     WindowResolution result;
-    result.windows.resize(maps.size() + 1);
-    result.windows[0] = first;
+    const std::span<ByteWindow> windows = allocate_windows(result, maps.size() + 1);
+    windows[0] = first;
     const trace::Scope scope("serial chain", "window", {"maps", static_cast<std::int64_t>(maps.size())});
     for (std::size_t k = 1; k <= maps.size(); ++k) {
-        apply(*maps[k - 1], result.windows[k - 1], result.windows[k]);
+        apply(*maps[k - 1], windows[k - 1], windows[k]);
     }
     result.cost = {maps.size(), maps.size()};
     return result;
@@ -33,12 +43,12 @@ WindowResolution resolve_by_scan(ThreadPool& pool, const ByteWindow& first,
         result.cost = scan(prefix);
     }
 
-    result.windows.resize(maps.size() + 1);
-    result.windows[0] = first;
+    const std::span<ByteWindow> windows = allocate_windows(result, maps.size() + 1);
+    windows[0] = first;
     parallel_for(pool, 0, prefix.size(), 1, [&](std::size_t lo, std::size_t hi) {
         const trace::Scope scope("apply prefixes", "window", {"maps", static_cast<std::int64_t>(hi - lo)});
         for (std::size_t k = lo; k < hi; ++k) {
-            apply(*prefix[k], first, result.windows[k + 1]);
+            apply(*prefix[k], first, windows[k + 1]);
         }
     });
     ++result.cost.rounds;
@@ -56,8 +66,8 @@ WindowResolution resolve_blocked(ThreadPool& pool, const ByteWindow& first,
     auto block_begin = [&](std::size_t b) { return n * b / blocks; };
 
     WindowResolution result;
-    result.windows.resize(n + 1);
-    result.windows[0] = first;
+    const std::span<ByteWindow> windows = allocate_windows(result, n + 1);
+    windows[0] = first;
     if (n == 0) {
         return result;
     }
@@ -89,8 +99,8 @@ WindowResolution resolve_blocked(ThreadPool& pool, const ByteWindow& first,
             const trace::Scope scope("resolve block", "window", {"block", static_cast<std::int64_t>(b)});
             const ByteWindow* previous = &entering[b];
             for (std::size_t k = block_begin(b); k < block_begin(b + 1); ++k) {
-                apply(*maps[k], *previous, result.windows[k + 1]);
-                previous = &result.windows[k + 1];
+                apply(*maps[k], *previous, windows[k + 1]);
+                previous = &windows[k + 1];
             }
         }
     });
@@ -113,8 +123,16 @@ std::string_view to_string(WindowStrategy strategy) noexcept {
             return "blelloch";
         case WindowStrategy::kBlocked:
             return "blocked";
+        case WindowStrategy::kGpuSerial:
+            return "gpu-serial";
+        case WindowStrategy::kGpuBlocked:
+            return "gpu-blocked";
     }
     return "unknown";
+}
+
+bool is_gpu(WindowStrategy strategy) noexcept {
+    return strategy == WindowStrategy::kGpuSerial || strategy == WindowStrategy::kGpuBlocked;
 }
 
 WindowResolution resolve_windows(ThreadPool& pool, const ByteWindow& first,
@@ -132,6 +150,9 @@ WindowResolution resolve_windows(ThreadPool& pool, const ByteWindow& first,
             });
         case WindowStrategy::kBlocked:
             return resolve_blocked(pool, first, maps);
+        case WindowStrategy::kGpuSerial:
+        case WindowStrategy::kGpuBlocked:
+            throw std::invalid_argument("GPU window strategies need a GpuWindowResolver");
     }
     return resolve_serial(first, maps);
 }

@@ -49,29 +49,31 @@ void apply(const SymbolWindow& map, const ByteWindow& previous, ByteWindow& outp
 
 SymbolWindowPtr final_window_of(const ChunkData& chunk) {
     auto window = std::make_shared<SymbolWindow>();
-    auto& symbols = window->symbols;
+    window->concrete = write_final_window(chunk, window->symbols.data());
+    return window;
+}
 
+bool write_final_window(const ChunkData& chunk, std::uint16_t* symbols) noexcept {
     if (chunk.plain.size() >= kWindowSize) {
         // Output switched to 8-bit form (or started with a full known window):
         // its last 32 KiB are concrete bytes.
         const auto tail = std::span(chunk.plain).last(kWindowSize);
-        std::copy(tail.begin(), tail.end(), symbols.begin());
-        window->concrete = true;
-    } else if (chunk.uses_markers) {
+        std::copy(tail.begin(), tail.end(), symbols);
+        return true;
+    }
+    if (chunk.uses_markers) {
         // Still in 16-bit form; `marked` starts with 32 KiB of identity markers, so
         // it always holds at least a full window.
         const auto tail = std::span(chunk.marked).last(kWindowSize);
-        std::copy(tail.begin(), tail.end(), symbols.begin());
-        window->concrete =
-            std::none_of(tail.begin(), tail.end(), [](std::uint16_t s) { return is_marker(s); });
-    } else {
-        // Known-window chunk shorter than 32 KiB (only at the start of a stream);
-        // positions before the stream start are never referenced and stay zero.
-        std::copy(chunk.plain.begin(), chunk.plain.end(),
-                  symbols.end() - static_cast<std::ptrdiff_t>(chunk.plain.size()));
-        window->concrete = true;
+        std::copy(tail.begin(), tail.end(), symbols);
+        return std::none_of(tail.begin(), tail.end(), [](std::uint16_t s) { return is_marker(s); });
     }
-    return window;
+    // Known-window chunk shorter than 32 KiB (only at the start of a stream);
+    // positions before the stream start are never referenced and are zero.
+    const std::size_t missing = kWindowSize - chunk.plain.size();
+    std::fill(symbols, symbols + missing, std::uint16_t{0});
+    std::copy(chunk.plain.begin(), chunk.plain.end(), symbols + missing);
+    return true;
 }
 
 void replace_markers(std::span<const std::uint16_t> symbols, const ByteWindow& window,

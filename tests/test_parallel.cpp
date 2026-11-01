@@ -1,6 +1,7 @@
 // Tests of the parallel runtime and of window resolution: thread pool, task groups,
 // parallel_for, the prefix scans, the window-map algebra behind M3, and tracing.
 
+#include <algorithm>
 #include <atomic>
 #include <functional>
 #include <cstdint>
@@ -200,7 +201,7 @@ RIPTIDE_TEST(window_resolver, every_strategy_resolves_identical_windows) {
         for (const auto strategy : {WindowStrategy::kHillisSteele, WindowStrategy::kBlelloch,
                                     WindowStrategy::kBlocked}) {
             const auto other = resolve_windows(pool, first, maps, strategy);
-            if (other.windows != serial.windows) {
+            if (!std::ranges::equal(other.windows, serial.windows)) {
                 test::report_failure(__FILE__, __LINE__,
                                      std::string(to_string(strategy)) + " differs for " +
                                          std::to_string(chunks) + " chunks");
