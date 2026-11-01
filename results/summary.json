@@ -1,7 +1,7 @@
 {
  "correctness": {
-  "runs": 1200,
-  "identical": 1200
+  "runs": 1600,
+  "identical": 1600
  },
  "scaling": {
   "logs.ndjson.gz": {
@@ -2568,6 +2568,914 @@
    "p": 0.023230639329710537,
    "rank_biserial": 0.6,
    "p_holm": 0.06969191798913162,
+   "significant": false
+  }
+ ],
+ "gpu_window": {
+  "silesia.tar.gz": [
+   {
+    "chunk_size": 65536,
+    "chunks": 1041,
+    "strategies": {
+     "serial": {
+      "window_seconds": 0.035649083,
+      "window_iqr": 0.001123530999999997,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.00171775,
+      "total_seconds": 0.1822695,
+      "total_iqr": 0.003917000000000004,
+      "rounds": 1040,
+      "combinations": 1040
+     },
+     "blocked": {
+      "window_seconds": 0.0141206875,
+      "window_iqr": 0.0003662600000000002,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.0017192925,
+      "total_seconds": 0.1619765,
+      "total_iqr": 0.003840750000000004,
+      "rounds": 217,
+      "combinations": 2089
+     },
+     "gpu-serial": {
+      "window_seconds": 0.0083385625,
+      "window_iqr": 0.003398812249999999,
+      "device_seconds": 0.0076586875,
+      "window_map_seconds": 0.0014953955,
+      "total_seconds": 0.157194,
+      "total_iqr": 0.002395750000000002,
+      "rounds": 1040,
+      "combinations": 1040
+     },
+     "gpu-blocked": {
+      "window_seconds": 0.010105979000000001,
+      "window_iqr": 0.0009877187499999999,
+      "device_seconds": 0.009383458340000001,
+      "window_map_seconds": 0.0014863755,
+      "total_seconds": 0.15697,
+      "total_iqr": 0.002421499999999993,
+      "rounds": 91,
+      "combinations": 2102
+     }
+    }
+   },
+   {
+    "chunk_size": 131072,
+    "chunks": 521,
+    "strategies": {
+     "serial": {
+      "window_seconds": 0.018895020999999998,
+      "window_iqr": 0.00022580175000000077,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.0008518964999999999,
+      "total_seconds": 0.147417,
+      "total_iqr": 0.0016350000000000253,
+      "rounds": 520,
+      "combinations": 520
+     },
+     "blocked": {
+      "window_seconds": 0.0072755415,
+      "window_iqr": 0.00035676025000000097,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.000852667,
+      "total_seconds": 0.13604,
+      "total_iqr": 0.004241750000000016,
+      "rounds": 113,
+      "combinations": 1049
+     },
+     "gpu-serial": {
+      "window_seconds": 0.0056691665,
+      "window_iqr": 0.00026800100000000035,
+      "device_seconds": 0.004822208335,
+      "window_map_seconds": 0.0007609170000000001,
+      "total_seconds": 0.132574,
+      "total_iqr": 0.000939750000000017,
+      "rounds": 520,
+      "combinations": 520
+     },
+     "gpu-blocked": {
+      "window_seconds": 0.0057254585,
+      "window_iqr": 0.0005103017499999999,
+      "device_seconds": 0.004929875,
+      "window_map_seconds": 0.000772834,
+      "total_seconds": 0.132106,
+      "total_iqr": 0.002428249999999993,
+      "rounds": 65,
+      "combinations": 1054
+     }
+    }
+   },
+   {
+    "chunk_size": 262144,
+    "chunks": 261,
+    "strategies": {
+     "serial": {
+      "window_seconds": 0.0101342085,
+      "window_iqr": 0.0006202389999999981,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.000448771,
+      "total_seconds": 0.13230950000000002,
+      "total_iqr": 0.0022825000000000206,
+      "rounds": 260,
+      "combinations": 260
+     },
+     "blocked": {
+      "window_seconds": 0.0037752915,
+      "window_iqr": 0.00047798975000000075,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.00045204200000000005,
+      "total_seconds": 0.1248725,
+      "total_iqr": 0.0023367499999999986,
+      "rounds": 61,
+      "combinations": 529
+     },
+     "gpu-serial": {
+      "window_seconds": 0.0033791665,
+      "window_iqr": 7.999074999999987e-05,
+      "device_seconds": 0.002515187505,
+      "window_map_seconds": 0.000407333,
+      "total_seconds": 0.125645,
+      "total_iqr": 0.0013022500000000187,
+      "rounds": 260,
+      "combinations": 260
+     },
+     "gpu-blocked": {
+      "window_seconds": 0.003617375,
+      "window_iqr": 0.00015791675000000017,
+      "device_seconds": 0.0027326875,
+      "window_map_seconds": 0.00040985450000000003,
+      "total_seconds": 0.12650899999999998,
+      "total_iqr": 0.0021660000000000013,
+      "rounds": 46,
+      "combinations": 530
+     }
+    }
+   },
+   {
+    "chunk_size": 1048576,
+    "chunks": 66,
+    "strategies": {
+     "serial": {
+      "window_seconds": 0.002002688,
+      "window_iqr": 1.613524999999989e-05,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.000145626,
+      "total_seconds": 0.1194195,
+      "total_iqr": 0.005770499999999984,
+      "rounds": 65,
+      "combinations": 65
+     },
+     "blocked": {
+      "window_seconds": 0.0008808545,
+      "window_iqr": 3.737524999999995e-05,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.0001881045,
+      "total_seconds": 0.11562800000000001,
+      "total_iqr": 0.005578250000000007,
+      "rounds": 23,
+      "combinations": 139
+     },
+     "gpu-serial": {
+      "window_seconds": 0.0014362295,
+      "window_iqr": 0.00021191725000000014,
+      "device_seconds": 0.0006420416685,
+      "window_map_seconds": 0.00013012549999999999,
+      "total_seconds": 0.1172165,
+      "total_iqr": 0.0069624999999999965,
+      "rounds": 65,
+      "combinations": 65
+     },
+     "gpu-blocked": {
+      "window_seconds": 0.0014172920000000001,
+      "window_iqr": 4.928125000000006e-05,
+      "device_seconds": 0.000712729168,
+      "window_map_seconds": 0.000129354,
+      "total_seconds": 0.115356,
+      "total_iqr": 0.005609249999999996,
+      "rounds": 22,
+      "combinations": 134
+     }
+    }
+   },
+   {
+    "chunk_size": 4194304,
+    "chunks": 17,
+    "strategies": {
+     "serial": {
+      "window_seconds": 0.00027833299999999997,
+      "window_iqr": 4.530499999999993e-06,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.000100437,
+      "total_seconds": 0.107959,
+      "total_iqr": 0.0041297500000000015,
+      "rounds": 16,
+      "combinations": 16
+     },
+     "blocked": {
+      "window_seconds": 0.000280875,
+      "window_iqr": 1.6489999999999973e-05,
+      "device_seconds": 0.0,
+      "window_map_seconds": 9.895800000000001e-05,
+      "total_seconds": 0.1089865,
+      "total_iqr": 0.004268000000000008,
+      "rounds": 13,
+      "combinations": 41
+     },
+     "gpu-serial": {
+      "window_seconds": 0.000969375,
+      "window_iqr": 7.440625000000004e-05,
+      "device_seconds": 0.0001322291715,
+      "window_map_seconds": 9.1937e-05,
+      "total_seconds": 0.110275,
+      "total_iqr": 0.005060999999999996,
+      "rounds": 16,
+      "combinations": 16
+     },
+     "gpu-blocked": {
+      "window_seconds": 0.00097225,
+      "window_iqr": 3.516650000000006e-05,
+      "device_seconds": 0.0002245625,
+      "window_map_seconds": 9.1708e-05,
+      "total_seconds": 0.10885700000000001,
+      "total_iqr": 0.004329749999999993,
+      "rounds": 11,
+      "combinations": 34
+     }
+    }
+   }
+  ],
+  "silesia_x5.tar.gz": [
+   {
+    "chunk_size": 65536,
+    "chunks": 5205,
+    "strategies": {
+     "serial": {
+      "window_seconds": 0.183913333,
+      "window_iqr": 0.014440770749999998,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.008920082999999999,
+      "total_seconds": 0.9896210000000001,
+      "total_iqr": 0.09586874999999995,
+      "rounds": 5204,
+      "combinations": 5204
+     },
+     "blocked": {
+      "window_seconds": 0.0659386255,
+      "window_iqr": 0.003277677750000013,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.0087854995,
+      "total_seconds": 0.863211,
+      "total_iqr": 0.023774249999999997,
+      "rounds": 1051,
+      "combinations": 10417
+     },
+     "gpu-serial": {
+      "window_seconds": 0.036151832999999994,
+      "window_iqr": 0.015226625000000008,
+      "device_seconds": 0.0234769375,
+      "window_map_seconds": 0.009535875499999999,
+      "total_seconds": 0.832341,
+      "total_iqr": 0.06299975000000002,
+      "rounds": 5204,
+      "combinations": 5204
+     },
+     "gpu-blocked": {
+      "window_seconds": 0.026428312500000002,
+      "window_iqr": 0.0036512187499999973,
+      "device_seconds": 0.023965041700000002,
+      "window_map_seconds": 0.007882771,
+      "total_seconds": 0.812521,
+      "total_iqr": 0.0143065,
+      "rounds": 205,
+      "combinations": 10457
+     }
+    }
+   },
+   {
+    "chunk_size": 131072,
+    "chunks": 2603,
+    "strategies": {
+     "serial": {
+      "window_seconds": 0.096926396,
+      "window_iqr": 0.011004812999999988,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.0041541040000000005,
+      "total_seconds": 0.7422385,
+      "total_iqr": 0.03274549999999998,
+      "rounds": 2602,
+      "combinations": 2602
+     },
+     "blocked": {
+      "window_seconds": 0.0316015625,
+      "window_iqr": 0.005468770250000001,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.004168438,
+      "total_seconds": 0.6944345000000001,
+      "total_iqr": 0.01962700000000006,
+      "rounds": 531,
+      "combinations": 5213
+     },
+     "gpu-serial": {
+      "window_seconds": 0.019950375,
+      "window_iqr": 0.0029249802500000005,
+      "device_seconds": 0.01596583335,
+      "window_map_seconds": 0.003826312,
+      "total_seconds": 0.6816420000000001,
+      "total_iqr": 0.022222749999999958,
+      "rounds": 2602,
+      "combinations": 2602
+     },
+     "gpu-blocked": {
+      "window_seconds": 0.014179937,
+      "window_iqr": 0.0048966772499999985,
+      "device_seconds": 0.01267210415,
+      "window_map_seconds": 0.0036788125,
+      "total_seconds": 0.6807255,
+      "total_iqr": 0.027290000000000036,
+      "rounds": 145,
+      "combinations": 5238
+     }
+    }
+   },
+   {
+    "chunk_size": 262144,
+    "chunks": 1302,
+    "strategies": {
+     "serial": {
+      "window_seconds": 0.0573964585,
+      "window_iqr": 0.00371345775000001,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.0021356665,
+      "total_seconds": 0.696322,
+      "total_iqr": 0.03370375000000014,
+      "rounds": 1301,
+      "combinations": 1301
+     },
+     "blocked": {
+      "window_seconds": 0.016949104,
+      "window_iqr": 0.0021025835000000014,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.0021351045000000003,
+      "total_seconds": 0.666633,
+      "total_iqr": 0.018548249999999933,
+      "rounds": 271,
+      "combinations": 2611
+     },
+     "gpu-serial": {
+      "window_seconds": 0.012737083,
+      "window_iqr": 0.005367812250000001,
+      "device_seconds": 0.01022147918,
+      "window_map_seconds": 0.0018800425,
+      "total_seconds": 0.6634815000000001,
+      "total_iqr": 0.029482000000000008,
+      "rounds": 1301,
+      "combinations": 1301
+     },
+     "gpu-blocked": {
+      "window_seconds": 0.010475771,
+      "window_iqr": 0.0036428750000000003,
+      "device_seconds": 0.009125812495,
+      "window_map_seconds": 0.001879313,
+      "total_seconds": 0.6626075,
+      "total_iqr": 0.014659749999999971,
+      "rounds": 102,
+      "combinations": 2626
+     }
+    }
+   },
+   {
+    "chunk_size": 1048576,
+    "chunks": 326,
+    "strategies": {
+     "serial": {
+      "window_seconds": 0.009939958,
+      "window_iqr": 0.0005864162500000009,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.000554396,
+      "total_seconds": 0.5781845,
+      "total_iqr": 0.012664250000000044,
+      "rounds": 325,
+      "combinations": 325
+     },
+     "blocked": {
+      "window_seconds": 0.0034800624999999996,
+      "window_iqr": 0.0006694892499999995,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.000576062,
+      "total_seconds": 0.573503,
+      "total_iqr": 0.007649750000000011,
+      "rounds": 75,
+      "combinations": 659
+     },
+     "gpu-serial": {
+      "window_seconds": 0.004062396,
+      "window_iqr": 0.0007459692500000003,
+      "device_seconds": 0.0029337499999999997,
+      "window_map_seconds": 0.000502896,
+      "total_seconds": 0.5727315,
+      "total_iqr": 0.00948300000000013,
+      "rounds": 325,
+      "combinations": 325
+     },
+     "gpu-blocked": {
+      "window_seconds": 0.003827375,
+      "window_iqr": 0.00039917750000000073,
+      "device_seconds": 0.0030699374999999997,
+      "window_map_seconds": 0.0004992085000000001,
+      "total_seconds": 0.5750835000000001,
+      "total_iqr": 0.010346000000000077,
+      "rounds": 50,
+      "combinations": 661
+     }
+    }
+   },
+   {
+    "chunk_size": 4194304,
+    "chunks": 82,
+    "strategies": {
+     "serial": {
+      "window_seconds": 0.0015381045,
+      "window_iqr": 2.0334000000000107e-05,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.0001758745,
+      "total_seconds": 0.463796,
+      "total_iqr": 0.011102250000000036,
+      "rounds": 81,
+      "combinations": 81
+     },
+     "blocked": {
+      "window_seconds": 0.000574417,
+      "window_iqr": 2.8156749999999923e-05,
+      "device_seconds": 0.0,
+      "window_map_seconds": 0.000192,
+      "total_seconds": 0.461135,
+      "total_iqr": 0.019333749999999927,
+      "rounds": 27,
+      "combinations": 171
+     },
+     "gpu-serial": {
+      "window_seconds": 0.0018314170000000001,
+      "window_iqr": 0.0004698752500000001,
+      "device_seconds": 0.000651375005,
+      "window_map_seconds": 0.000157625,
+      "total_seconds": 0.4613745,
+      "total_iqr": 0.01695724999999998,
+      "rounds": 81,
+      "combinations": 81
+     },
+     "gpu-blocked": {
+      "window_seconds": 0.001642354,
+      "window_iqr": 0.00011163599999999981,
+      "device_seconds": 0.00085722917,
+      "window_map_seconds": 0.00015616650000000002,
+      "total_seconds": 0.46515249999999997,
+      "total_iqr": 0.004176999999999931,
+      "rounds": 26,
+      "combinations": 167
+     }
+    }
+   }
+  ]
+ },
+ "gpu_window_tests": [
+  {
+   "name": "silesia.tar.gz 64 KiB window step: gpu-blocked vs blocked",
+   "baseline_median": 0.0141206875,
+   "candidate_median": 0.010105979000000001,
+   "ratio": 1.397260720609057,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 64 KiB total: gpu-blocked vs blocked",
+   "baseline_median": 0.1619765,
+   "candidate_median": 0.15697,
+   "ratio": 1.0318946295470472,
+   "U": 2.0,
+   "p": 4.330035289787612e-05,
+   "rank_biserial": 0.96,
+   "p_holm": 0.0009959081166511508,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 64 KiB window step: gpu-serial vs serial",
+   "baseline_median": 0.035649083,
+   "candidate_median": 0.0083385625,
+   "ratio": 4.275207267439681,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 64 KiB window step: gpu-blocked vs gpu-serial",
+   "baseline_median": 0.0083385625,
+   "candidate_median": 0.010105979000000001,
+   "ratio": 0.8251117976793737,
+   "U": 63.0,
+   "p": 0.35268137435320096,
+   "rank_biserial": -0.26,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia.tar.gz 128 KiB window step: gpu-blocked vs blocked",
+   "baseline_median": 0.0072755415,
+   "candidate_median": 0.0057254585,
+   "ratio": 1.2707351734363284,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 128 KiB total: gpu-blocked vs blocked",
+   "baseline_median": 0.13604,
+   "candidate_median": 0.132106,
+   "ratio": 1.0297791167698667,
+   "U": 13.0,
+   "p": 0.0038862066725843815,
+   "rank_biserial": 0.74,
+   "p_holm": 0.08161034012427201,
+   "significant": false
+  },
+  {
+   "name": "silesia.tar.gz 128 KiB window step: gpu-serial vs serial",
+   "baseline_median": 0.018895020999999998,
+   "candidate_median": 0.0056691665,
+   "ratio": 3.33294515163737,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 128 KiB window step: gpu-blocked vs gpu-serial",
+   "baseline_median": 0.0056691665,
+   "candidate_median": 0.0057254585,
+   "ratio": 0.9901681236533285,
+   "U": 54.0,
+   "p": 0.7959362618805343,
+   "rank_biserial": -0.08000000000000007,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia.tar.gz 256 KiB window step: gpu-blocked vs blocked",
+   "baseline_median": 0.0037752915,
+   "candidate_median": 0.003617375,
+   "ratio": 1.043654998445005,
+   "U": 33.0,
+   "p": 0.21756262313537855,
+   "rank_biserial": 0.33999999999999997,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia.tar.gz 256 KiB total: gpu-blocked vs blocked",
+   "baseline_median": 0.1248725,
+   "candidate_median": 0.12650899999999998,
+   "ratio": 0.9870641614430595,
+   "U": 77.0,
+   "p": 0.04325705254497824,
+   "rank_biserial": -0.54,
+   "p_holm": 0.6055987356296954,
+   "significant": false
+  },
+  {
+   "name": "silesia.tar.gz 256 KiB window step: gpu-serial vs serial",
+   "baseline_median": 0.0101342085,
+   "candidate_median": 0.0033791665,
+   "ratio": 2.999026091197341,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 256 KiB window step: gpu-blocked vs gpu-serial",
+   "baseline_median": 0.0033791665,
+   "candidate_median": 0.003617375,
+   "ratio": 0.9341487957427693,
+   "U": 86.0,
+   "p": 0.0051960423477451344,
+   "rank_biserial": -0.72,
+   "p_holm": 0.09872480460715756,
+   "significant": false
+  },
+  {
+   "name": "silesia.tar.gz 1024 KiB window step: gpu-blocked vs blocked",
+   "baseline_median": 0.0008808545,
+   "candidate_median": 0.0014172920000000001,
+   "ratio": 0.6215053073043522,
+   "U": 100.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": -1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 1024 KiB total: gpu-blocked vs blocked",
+   "baseline_median": 0.11562800000000001,
+   "candidate_median": 0.115356,
+   "ratio": 1.0023579180970215,
+   "U": 48.0,
+   "p": 0.9117971811470263,
+   "rank_biserial": 0.040000000000000036,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia.tar.gz 1024 KiB window step: gpu-serial vs serial",
+   "baseline_median": 0.002002688,
+   "candidate_median": 0.0014362295,
+   "ratio": 1.3944066738637522,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 1024 KiB window step: gpu-blocked vs gpu-serial",
+   "baseline_median": 0.0014362295,
+   "candidate_median": 0.0014172920000000001,
+   "ratio": 1.0133617490256064,
+   "U": 42.0,
+   "p": 0.5787416917447877,
+   "rank_biserial": 0.16000000000000003,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia.tar.gz 4096 KiB window step: gpu-blocked vs blocked",
+   "baseline_median": 0.000280875,
+   "candidate_median": 0.00097225,
+   "ratio": 0.2888917459501157,
+   "U": 100.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": -1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 4096 KiB total: gpu-blocked vs blocked",
+   "baseline_median": 0.1089865,
+   "candidate_median": 0.10885700000000001,
+   "ratio": 1.0011896341071314,
+   "U": 57.0,
+   "p": 0.6305289138106476,
+   "rank_biserial": -0.1399999999999999,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia.tar.gz 4096 KiB window step: gpu-serial vs serial",
+   "baseline_median": 0.00027833299999999997,
+   "candidate_median": 0.000969375,
+   "ratio": 0.28712624113475177,
+   "U": 100.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": -1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia.tar.gz 4096 KiB window step: gpu-blocked vs gpu-serial",
+   "baseline_median": 0.000969375,
+   "candidate_median": 0.00097225,
+   "ratio": 0.9970429416302391,
+   "U": 53.0,
+   "p": 0.8534283054406894,
+   "rank_biserial": -0.06000000000000005,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 64 KiB window step: gpu-blocked vs blocked",
+   "baseline_median": 0.0659386255,
+   "candidate_median": 0.026428312500000002,
+   "ratio": 2.494999463170416,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 64 KiB total: gpu-blocked vs blocked",
+   "baseline_median": 0.863211,
+   "candidate_median": 0.812521,
+   "ratio": 1.062386079867474,
+   "U": 8.0,
+   "p": 0.000725280911039425,
+   "rank_biserial": 0.84,
+   "p_holm": 0.01595618004286735,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 64 KiB window step: gpu-serial vs serial",
+   "baseline_median": 0.183913333,
+   "candidate_median": 0.036151832999999994,
+   "ratio": 5.087247802898404,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 64 KiB window step: gpu-blocked vs gpu-serial",
+   "baseline_median": 0.036151832999999994,
+   "candidate_median": 0.026428312500000002,
+   "ratio": 1.3679205965193575,
+   "U": 16.0,
+   "p": 0.00893069778518695,
+   "rank_biserial": 0.6799999999999999,
+   "p_holm": 0.16075256013336509,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 128 KiB window step: gpu-blocked vs blocked",
+   "baseline_median": 0.0316015625,
+   "candidate_median": 0.014179937,
+   "ratio": 2.228610924011863,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 128 KiB total: gpu-blocked vs blocked",
+   "baseline_median": 0.6944345000000001,
+   "candidate_median": 0.6807255,
+   "ratio": 1.0201388077866924,
+   "U": 38.0,
+   "p": 0.393048128342246,
+   "rank_biserial": 0.24,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 128 KiB window step: gpu-serial vs serial",
+   "baseline_median": 0.096926396,
+   "candidate_median": 0.019950375,
+   "ratio": 4.858374642080663,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 128 KiB window step: gpu-blocked vs gpu-serial",
+   "baseline_median": 0.019950375,
+   "candidate_median": 0.014179937,
+   "ratio": 1.4069438390311606,
+   "U": 13.0,
+   "p": 0.0038862066725843815,
+   "rank_biserial": 0.74,
+   "p_holm": 0.08161034012427201,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 256 KiB window step: gpu-blocked vs blocked",
+   "baseline_median": 0.016949104,
+   "candidate_median": 0.010475771,
+   "ratio": 1.617933801722088,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 256 KiB total: gpu-blocked vs blocked",
+   "baseline_median": 0.666633,
+   "candidate_median": 0.6626075,
+   "ratio": 1.0060752406213331,
+   "U": 47.0,
+   "p": 0.8534283054406894,
+   "rank_biserial": 0.06000000000000005,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 256 KiB window step: gpu-serial vs serial",
+   "baseline_median": 0.0573964585,
+   "candidate_median": 0.012737083,
+   "ratio": 4.506248290915589,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 256 KiB window step: gpu-blocked vs gpu-serial",
+   "baseline_median": 0.012737083,
+   "candidate_median": 0.010475771,
+   "ratio": 1.2158611523676872,
+   "U": 34.0,
+   "p": 0.24745069172313755,
+   "rank_biserial": 0.31999999999999995,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 1024 KiB window step: gpu-blocked vs blocked",
+   "baseline_median": 0.0034800624999999996,
+   "candidate_median": 0.003827375,
+   "ratio": 0.9092556909108722,
+   "U": 79.0,
+   "p": 0.028805559765312086,
+   "rank_biserial": -0.5800000000000001,
+   "p_holm": 0.4608889562449934,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 1024 KiB total: gpu-blocked vs blocked",
+   "baseline_median": 0.573503,
+   "candidate_median": 0.5750835000000001,
+   "ratio": 0.9972517034482817,
+   "U": 61.0,
+   "p": 0.43587217735824546,
+   "rank_biserial": -0.21999999999999997,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 1024 KiB window step: gpu-serial vs serial",
+   "baseline_median": 0.009939958,
+   "candidate_median": 0.004062396,
+   "ratio": 2.4468215309388843,
+   "U": 0.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": 1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 1024 KiB window step: gpu-blocked vs gpu-serial",
+   "baseline_median": 0.004062396,
+   "candidate_median": 0.003827375,
+   "ratio": 1.0614052712368138,
+   "U": 22.0,
+   "p": 0.03546298902336054,
+   "rank_biserial": 0.56,
+   "p_holm": 0.5319448353504082,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 4096 KiB window step: gpu-blocked vs blocked",
+   "baseline_median": 0.000574417,
+   "candidate_median": 0.001642354,
+   "ratio": 0.34975224586173265,
+   "U": 100.0,
+   "p": 1.082508822446903e-05,
+   "rank_biserial": -1.0,
+   "p_holm": 0.0004330035289787612,
+   "significant": true
+  },
+  {
+   "name": "silesia_x5.tar.gz 4096 KiB total: gpu-blocked vs blocked",
+   "baseline_median": 0.461135,
+   "candidate_median": 0.46515249999999997,
+   "ratio": 0.991363047602668,
+   "U": 56.0,
+   "p": 0.6842105263157895,
+   "rank_biserial": -0.1200000000000001,
+   "p_holm": 1.0,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 4096 KiB window step: gpu-serial vs serial",
+   "baseline_median": 0.0015381045,
+   "candidate_median": 0.0018314170000000001,
+   "ratio": 0.8398439568923952,
+   "U": 80.0,
+   "p": 0.023230639329710537,
+   "rank_biserial": -0.6000000000000001,
+   "p_holm": 0.39492086860507913,
+   "significant": false
+  },
+  {
+   "name": "silesia_x5.tar.gz 4096 KiB window step: gpu-blocked vs gpu-serial",
+   "baseline_median": 0.0018314170000000001,
+   "candidate_median": 0.001642354,
+   "ratio": 1.1151170819445748,
+   "U": 33.0,
+   "p": 0.21756262313537855,
+   "rank_biserial": 0.33999999999999997,
+   "p_holm": 1.0,
    "significant": false
   }
  ],

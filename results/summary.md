@@ -1,6 +1,6 @@
 # Benchmark summary
 
-Correctness: 1200 of 1200 measured runs byte-identical to zlib.
+Correctness: 1600 of 1600 measured runs byte-identical to zlib.
 
 ## E1 Scaling (4 MiB chunks, blocked windows)
 
@@ -274,6 +274,96 @@ Correctness: 1200 of 1200 measured runs byte-identical to zlib.
 | silesia_x5.tar.gz | 4M | split | 2371 | 2.24 |
 | silesia_x5.tar.gz | 512K | serial | 1896 | 1.79 |
 | silesia_x5.tar.gz | 512K | split | 1912 | 1.80 |
+
+## E6 CPU and GPU window resolution (10 threads)
+
+| File | Chunk | Chunks | Strategy | Window ms | IQR | GPU ms | Dependent steps | Total ms |
+|---|---|---|---|---|---|---|---|---|
+| silesia.tar.gz | 64 KiB | 1041 | serial | 35.65 | 1.12 | 0.00 | 1040 | 182.3 |
+| silesia.tar.gz | 64 KiB | 1041 | blocked | 14.12 | 0.37 | 0.00 | 217 | 162.0 |
+| silesia.tar.gz | 64 KiB | 1041 | gpu-serial | 8.34 | 3.40 | 7.66 | 1040 | 157.2 |
+| silesia.tar.gz | 64 KiB | 1041 | gpu-blocked | 10.11 | 0.99 | 9.38 | 91 | 157.0 |
+| silesia.tar.gz | 128 KiB | 521 | serial | 18.90 | 0.23 | 0.00 | 520 | 147.4 |
+| silesia.tar.gz | 128 KiB | 521 | blocked | 7.28 | 0.36 | 0.00 | 113 | 136.0 |
+| silesia.tar.gz | 128 KiB | 521 | gpu-serial | 5.67 | 0.27 | 4.82 | 520 | 132.6 |
+| silesia.tar.gz | 128 KiB | 521 | gpu-blocked | 5.73 | 0.51 | 4.93 | 65 | 132.1 |
+| silesia.tar.gz | 256 KiB | 261 | serial | 10.13 | 0.62 | 0.00 | 260 | 132.3 |
+| silesia.tar.gz | 256 KiB | 261 | blocked | 3.78 | 0.48 | 0.00 | 61 | 124.9 |
+| silesia.tar.gz | 256 KiB | 261 | gpu-serial | 3.38 | 0.08 | 2.52 | 260 | 125.6 |
+| silesia.tar.gz | 256 KiB | 261 | gpu-blocked | 3.62 | 0.16 | 2.73 | 46 | 126.5 |
+| silesia.tar.gz | 1024 KiB | 66 | serial | 2.00 | 0.02 | 0.00 | 65 | 119.4 |
+| silesia.tar.gz | 1024 KiB | 66 | blocked | 0.88 | 0.04 | 0.00 | 23 | 115.6 |
+| silesia.tar.gz | 1024 KiB | 66 | gpu-serial | 1.44 | 0.21 | 0.64 | 65 | 117.2 |
+| silesia.tar.gz | 1024 KiB | 66 | gpu-blocked | 1.42 | 0.05 | 0.71 | 22 | 115.4 |
+| silesia.tar.gz | 4096 KiB | 17 | serial | 0.28 | 0.00 | 0.00 | 16 | 108.0 |
+| silesia.tar.gz | 4096 KiB | 17 | blocked | 0.28 | 0.02 | 0.00 | 13 | 109.0 |
+| silesia.tar.gz | 4096 KiB | 17 | gpu-serial | 0.97 | 0.07 | 0.13 | 16 | 110.3 |
+| silesia.tar.gz | 4096 KiB | 17 | gpu-blocked | 0.97 | 0.04 | 0.22 | 11 | 108.9 |
+| silesia_x5.tar.gz | 64 KiB | 5205 | serial | 183.91 | 14.44 | 0.00 | 5204 | 989.6 |
+| silesia_x5.tar.gz | 64 KiB | 5205 | blocked | 65.94 | 3.28 | 0.00 | 1051 | 863.2 |
+| silesia_x5.tar.gz | 64 KiB | 5205 | gpu-serial | 36.15 | 15.23 | 23.48 | 5204 | 832.3 |
+| silesia_x5.tar.gz | 64 KiB | 5205 | gpu-blocked | 26.43 | 3.65 | 23.97 | 205 | 812.5 |
+| silesia_x5.tar.gz | 128 KiB | 2603 | serial | 96.93 | 11.00 | 0.00 | 2602 | 742.2 |
+| silesia_x5.tar.gz | 128 KiB | 2603 | blocked | 31.60 | 5.47 | 0.00 | 531 | 694.4 |
+| silesia_x5.tar.gz | 128 KiB | 2603 | gpu-serial | 19.95 | 2.92 | 15.97 | 2602 | 681.6 |
+| silesia_x5.tar.gz | 128 KiB | 2603 | gpu-blocked | 14.18 | 4.90 | 12.67 | 145 | 680.7 |
+| silesia_x5.tar.gz | 256 KiB | 1302 | serial | 57.40 | 3.71 | 0.00 | 1301 | 696.3 |
+| silesia_x5.tar.gz | 256 KiB | 1302 | blocked | 16.95 | 2.10 | 0.00 | 271 | 666.6 |
+| silesia_x5.tar.gz | 256 KiB | 1302 | gpu-serial | 12.74 | 5.37 | 10.22 | 1301 | 663.5 |
+| silesia_x5.tar.gz | 256 KiB | 1302 | gpu-blocked | 10.48 | 3.64 | 9.13 | 102 | 662.6 |
+| silesia_x5.tar.gz | 1024 KiB | 326 | serial | 9.94 | 0.59 | 0.00 | 325 | 578.2 |
+| silesia_x5.tar.gz | 1024 KiB | 326 | blocked | 3.48 | 0.67 | 0.00 | 75 | 573.5 |
+| silesia_x5.tar.gz | 1024 KiB | 326 | gpu-serial | 4.06 | 0.75 | 2.93 | 325 | 572.7 |
+| silesia_x5.tar.gz | 1024 KiB | 326 | gpu-blocked | 3.83 | 0.40 | 3.07 | 50 | 575.1 |
+| silesia_x5.tar.gz | 4096 KiB | 82 | serial | 1.54 | 0.02 | 0.00 | 81 | 463.8 |
+| silesia_x5.tar.gz | 4096 KiB | 82 | blocked | 0.57 | 0.03 | 0.00 | 27 | 461.1 |
+| silesia_x5.tar.gz | 4096 KiB | 82 | gpu-serial | 1.83 | 0.47 | 0.65 | 81 | 461.4 |
+| silesia_x5.tar.gz | 4096 KiB | 82 | gpu-blocked | 1.64 | 0.11 | 0.86 | 26 | 465.2 |
+
+## E6 comparisons (Mann-Whitney U, Holm-corrected)
+
+| Comparison | Baseline median | Candidate median | Ratio | p (Holm) | Significant |
+|---|---|---|---|---|---|
+| silesia.tar.gz 64 KiB window step: gpu-blocked vs blocked | 14.121 ms | 10.106 ms | 1.40x | 0.00043 | yes |
+| silesia.tar.gz 64 KiB total: gpu-blocked vs blocked | 161.976 ms | 156.970 ms | 1.03x | 0.001 | yes |
+| silesia.tar.gz 64 KiB window step: gpu-serial vs serial | 35.649 ms | 8.339 ms | 4.28x | 0.00043 | yes |
+| silesia.tar.gz 64 KiB window step: gpu-blocked vs gpu-serial | 8.339 ms | 10.106 ms | 0.83x | 1 | no |
+| silesia.tar.gz 128 KiB window step: gpu-blocked vs blocked | 7.276 ms | 5.725 ms | 1.27x | 0.00043 | yes |
+| silesia.tar.gz 128 KiB total: gpu-blocked vs blocked | 136.040 ms | 132.106 ms | 1.03x | 0.082 | no |
+| silesia.tar.gz 128 KiB window step: gpu-serial vs serial | 18.895 ms | 5.669 ms | 3.33x | 0.00043 | yes |
+| silesia.tar.gz 128 KiB window step: gpu-blocked vs gpu-serial | 5.669 ms | 5.725 ms | 0.99x | 1 | no |
+| silesia.tar.gz 256 KiB window step: gpu-blocked vs blocked | 3.775 ms | 3.617 ms | 1.04x | 1 | no |
+| silesia.tar.gz 256 KiB total: gpu-blocked vs blocked | 124.873 ms | 126.509 ms | 0.99x | 0.61 | no |
+| silesia.tar.gz 256 KiB window step: gpu-serial vs serial | 10.134 ms | 3.379 ms | 3.00x | 0.00043 | yes |
+| silesia.tar.gz 256 KiB window step: gpu-blocked vs gpu-serial | 3.379 ms | 3.617 ms | 0.93x | 0.099 | no |
+| silesia.tar.gz 1024 KiB window step: gpu-blocked vs blocked | 0.881 ms | 1.417 ms | 0.62x | 0.00043 | yes |
+| silesia.tar.gz 1024 KiB total: gpu-blocked vs blocked | 115.628 ms | 115.356 ms | 1.00x | 1 | no |
+| silesia.tar.gz 1024 KiB window step: gpu-serial vs serial | 2.003 ms | 1.436 ms | 1.39x | 0.00043 | yes |
+| silesia.tar.gz 1024 KiB window step: gpu-blocked vs gpu-serial | 1.436 ms | 1.417 ms | 1.01x | 1 | no |
+| silesia.tar.gz 4096 KiB window step: gpu-blocked vs blocked | 0.281 ms | 0.972 ms | 0.29x | 0.00043 | yes |
+| silesia.tar.gz 4096 KiB total: gpu-blocked vs blocked | 108.987 ms | 108.857 ms | 1.00x | 1 | no |
+| silesia.tar.gz 4096 KiB window step: gpu-serial vs serial | 0.278 ms | 0.969 ms | 0.29x | 0.00043 | yes |
+| silesia.tar.gz 4096 KiB window step: gpu-blocked vs gpu-serial | 0.969 ms | 0.972 ms | 1.00x | 1 | no |
+| silesia_x5.tar.gz 64 KiB window step: gpu-blocked vs blocked | 65.939 ms | 26.428 ms | 2.49x | 0.00043 | yes |
+| silesia_x5.tar.gz 64 KiB total: gpu-blocked vs blocked | 863.211 ms | 812.521 ms | 1.06x | 0.016 | yes |
+| silesia_x5.tar.gz 64 KiB window step: gpu-serial vs serial | 183.913 ms | 36.152 ms | 5.09x | 0.00043 | yes |
+| silesia_x5.tar.gz 64 KiB window step: gpu-blocked vs gpu-serial | 36.152 ms | 26.428 ms | 1.37x | 0.16 | no |
+| silesia_x5.tar.gz 128 KiB window step: gpu-blocked vs blocked | 31.602 ms | 14.180 ms | 2.23x | 0.00043 | yes |
+| silesia_x5.tar.gz 128 KiB total: gpu-blocked vs blocked | 694.435 ms | 680.726 ms | 1.02x | 1 | no |
+| silesia_x5.tar.gz 128 KiB window step: gpu-serial vs serial | 96.926 ms | 19.950 ms | 4.86x | 0.00043 | yes |
+| silesia_x5.tar.gz 128 KiB window step: gpu-blocked vs gpu-serial | 19.950 ms | 14.180 ms | 1.41x | 0.082 | no |
+| silesia_x5.tar.gz 256 KiB window step: gpu-blocked vs blocked | 16.949 ms | 10.476 ms | 1.62x | 0.00043 | yes |
+| silesia_x5.tar.gz 256 KiB total: gpu-blocked vs blocked | 666.633 ms | 662.608 ms | 1.01x | 1 | no |
+| silesia_x5.tar.gz 256 KiB window step: gpu-serial vs serial | 57.396 ms | 12.737 ms | 4.51x | 0.00043 | yes |
+| silesia_x5.tar.gz 256 KiB window step: gpu-blocked vs gpu-serial | 12.737 ms | 10.476 ms | 1.22x | 1 | no |
+| silesia_x5.tar.gz 1024 KiB window step: gpu-blocked vs blocked | 3.480 ms | 3.827 ms | 0.91x | 0.46 | no |
+| silesia_x5.tar.gz 1024 KiB total: gpu-blocked vs blocked | 573.503 ms | 575.084 ms | 1.00x | 1 | no |
+| silesia_x5.tar.gz 1024 KiB window step: gpu-serial vs serial | 9.940 ms | 4.062 ms | 2.45x | 0.00043 | yes |
+| silesia_x5.tar.gz 1024 KiB window step: gpu-blocked vs gpu-serial | 4.062 ms | 3.827 ms | 1.06x | 0.53 | no |
+| silesia_x5.tar.gz 4096 KiB window step: gpu-blocked vs blocked | 0.574 ms | 1.642 ms | 0.35x | 0.00043 | yes |
+| silesia_x5.tar.gz 4096 KiB total: gpu-blocked vs blocked | 461.135 ms | 465.152 ms | 0.99x | 1 | no |
+| silesia_x5.tar.gz 4096 KiB window step: gpu-serial vs serial | 1.538 ms | 1.831 ms | 0.84x | 0.39 | no |
+| silesia_x5.tar.gz 4096 KiB window step: gpu-blocked vs gpu-serial | 1.831 ms | 1.642 ms | 1.12x | 1 | no |
 
 ## R1 riptide and rapidgzip 0.16.0, 4 MiB chunks (process wall time minus start-up)
 
