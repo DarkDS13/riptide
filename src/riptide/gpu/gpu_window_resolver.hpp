@@ -27,7 +27,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <string>
 
 #include <riptide/common/deflate_constants.hpp>
 #include <riptide/window/window.hpp>
@@ -69,8 +68,6 @@ public:
     /// `strategy` must be kGpuSerial or kGpuBlocked. Not safe to call concurrently.
     [[nodiscard]] WindowResolution resolve(const ByteWindow& first, const Maps& maps,
                                            WindowStrategy strategy) const;
-
-    [[nodiscard]] std::string device_name() const;
 
 private:
     struct Impl;

@@ -14,7 +14,9 @@
 //   sequential       n - 1         n - 1
 //   Hillis-Steele    O(n log n)    ceil(log2 n)
 //   Blelloch         O(n)          2 log2 n + 1
-//   blocked          about 2n      2n / p + p   (p = number of blocks)
+//
+// The blocked scheme (about 2n work, 2n / p + p rounds for p blocks) is implemented
+// for windows directly in window/window_resolver.cpp, where it needs no prefix maps.
 
 #include <algorithm>
 #include <bit>
@@ -116,50 +118,6 @@ ScanCost blelloch_inclusive_scan(ThreadPool& pool, std::vector<T>& values, Combi
     });
     cost.combinations += n;
     ++cost.rounds;
-    return cost;
-}
-
-/// Two-level scan: each of `blocks` contiguous blocks is scanned sequentially in
-/// parallel, the block totals are scanned sequentially, and each block is then
-/// offset by the total of all blocks before it, again in parallel.
-template <typename T, typename Combine>
-ScanCost blocked_inclusive_scan(ThreadPool& pool, std::vector<T>& values, Combine&& combine,
-                                std::size_t blocks) {
-    ScanCost cost;
-    const std::size_t n = values.size();
-    blocks = std::clamp<std::size_t>(blocks, 1, std::max<std::size_t>(n, 1));
-    if (n <= 1) {
-        return cost;
-    }
-    auto block_begin = [&](std::size_t b) { return n * b / blocks; };
-
-    parallel_for(pool, 0, blocks, 1, [&](std::size_t lo, std::size_t hi) {
-        for (std::size_t b = lo; b < hi; ++b) {
-            for (std::size_t k = block_begin(b) + 1; k < block_begin(b + 1); ++k) {
-                values[k] = combine(values[k - 1], values[k]);
-            }
-        }
-    });
-
-    // carry[b] = combination of all blocks before block b (block 0 has none).
-    std::vector<T> carry(blocks);
-    for (std::size_t b = 1; b < blocks; ++b) {
-        const T& previous_total = values[block_begin(b) - 1];
-        carry[b] = b == 1 ? previous_total : combine(carry[b - 1], previous_total);
-    }
-
-    parallel_for(pool, 1, blocks, 1, [&](std::size_t lo, std::size_t hi) {
-        for (std::size_t b = lo; b < hi; ++b) {
-            for (std::size_t k = block_begin(b); k < block_begin(b + 1); ++k) {
-                values[k] = combine(carry[b], values[k]);
-            }
-        }
-    });
-
-    const std::size_t longest_block = (n + blocks - 1) / blocks;
-    const std::size_t carry_steps = blocks >= 2 ? blocks - 2 : 0;
-    cost.rounds = (longest_block - 1) + carry_steps + (blocks >= 2 ? longest_block : 0);
-    cost.combinations = (n - blocks) + carry_steps + (n - block_begin(1));
     return cost;
 }
 

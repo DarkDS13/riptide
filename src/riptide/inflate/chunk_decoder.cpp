@@ -88,7 +88,7 @@ public:
         if (start.stored_payload) {
             reader_.seek(start.bit);
             copy_stored_payload();
-            finish_block(result);
+            finish_block();
             at_start = false;
         } else {
             reader_.seek(start.bit);
@@ -137,7 +137,7 @@ public:
                 case BlockType::kReserved:
                     throw DecodeError("reserved DEFLATE block type");
             }
-            finish_block(result);
+            finish_block();
 
             if (is_final && !continue_with_next_member(result, limits)) {
                 return finish(std::move(result), StopReason::kStreamEnd, reader_.tell(), {});
@@ -288,8 +288,7 @@ private:
         size += bytes.size();
     }
 
-    void finish_block(ChunkResult& result) {
-        ++result.block_count;
+    void finish_block() {
         if (marked_mode_ && marked_size_ - last_marker_end_ >= kWindowSize) {
             switch_to_plain_output();
         }

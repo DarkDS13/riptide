@@ -10,8 +10,6 @@ namespace riptide {
 /// Fields of a gzip member header (RFC 1952) that the decompressor needs.
 struct GzipHeader {
     std::size_t size = 0;        ///< Header length in bytes; the DEFLATE stream starts after it.
-    std::uint8_t flags = 0;      ///< FLG byte.
-    std::uint32_t mtime = 0;     ///< Modification time as stored in the header.
     std::string original_name;   ///< FNAME field, if present.
 };
 

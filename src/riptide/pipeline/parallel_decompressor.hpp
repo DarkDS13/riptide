@@ -46,7 +46,6 @@ public:
 
     [[nodiscard]] DecompressionResult decompress(std::span<const std::uint8_t> gzip);
 
-    [[nodiscard]] const DecompressorOptions& options() const noexcept { return options_; }
 
 private:
     DecompressorOptions options_;

@@ -65,9 +65,6 @@ public:
     /// Discards bits up to the next byte boundary.
     void align_to_byte() noexcept { skip(bit_count_ % 8); }
 
-    /// Underlying buffer, for byte-aligned copies of stored blocks.
-    [[nodiscard]] std::span<const std::uint8_t> data() const noexcept { return data_; }
-
 private:
     void refill() noexcept {
         if (byte_position_ + 8 <= data_.size()) {
