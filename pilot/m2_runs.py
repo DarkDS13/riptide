@@ -11,7 +11,7 @@ import sys
 import numpy as np
 
 from silesia_run import SIL, chunk_bounds
-from window_scan import W, decode_chunk
+from window_scan import decode_chunk
 
 RECORD_BYTES = 12   # start (8) + window offset (2) + length (2)
 
