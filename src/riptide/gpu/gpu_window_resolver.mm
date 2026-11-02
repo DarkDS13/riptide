@@ -192,8 +192,6 @@ bool GpuWindowResolver::available() noexcept {
     }
 }
 
-std::string GpuWindowResolver::device_name() const { return impl_->device.name.UTF8String; }
-
 GpuWindowResolver::Maps GpuWindowResolver::allocate_maps(std::size_t count) const {
     auto holder = impl_->reuse(impl_->maps_cache, count * kWindowSize * sizeof(std::uint16_t));
     Maps maps;

@@ -55,27 +55,26 @@ GzipHeader parse_gzip_header(std::span<const std::uint8_t> data, std::size_t off
     }
 
     GzipHeader header;
-    header.flags = data[offset + 3];
-    if ((header.flags & kReservedFlags) != 0) {
+    const std::uint8_t flags = data[offset + 3];
+    if ((flags & kReservedFlags) != 0) {
         throw GzipFormatError("reserved gzip header flags are set");
     }
-    header.mtime = read_le32(data, offset + 4);
 
     std::size_t position = offset + kFixedHeaderSize;
-    if ((header.flags & kFlagExtra) != 0) {
+    if ((flags & kFlagExtra) != 0) {
         if (position + 2 > data.size()) {
             throw GzipFormatError("truncated gzip extra field");
         }
         const std::size_t extra_length = data[position] | (std::size_t{data[position + 1]} << 8);
         position += 2 + extra_length;
     }
-    if ((header.flags & kFlagName) != 0) {
+    if ((flags & kFlagName) != 0) {
         position = skip_zero_terminated(data, position, &header.original_name);
     }
-    if ((header.flags & kFlagComment) != 0) {
+    if ((flags & kFlagComment) != 0) {
         position = skip_zero_terminated(data, position, nullptr);
     }
-    if ((header.flags & kFlagHeaderCrc) != 0) {
+    if ((flags & kFlagHeaderCrc) != 0) {
         position += 2;
     }
     if (position > data.size()) {

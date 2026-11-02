@@ -9,7 +9,6 @@ by a parallel prefix scan, both checked against zlib.
 """
 import glob
 import json
-import math
 import os
 import sys
 import time

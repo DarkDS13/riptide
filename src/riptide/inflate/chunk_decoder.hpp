@@ -86,7 +86,6 @@ struct ChunkResult {
     BlockBoundary end;           ///< Boundary of the block where decoding stopped (unless kStreamEnd).
     std::size_t end_bit = 0;     ///< Bit offset where decoding stopped.
     StopReason reason = StopReason::kStreamEnd;
-    std::size_t block_count = 0;
     std::vector<MemberEnd> member_ends;  ///< Members that ended inside this chunk, in order.
     ChunkData data;
 };

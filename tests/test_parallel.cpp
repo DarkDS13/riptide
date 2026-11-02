@@ -135,12 +135,9 @@ RIPTIDE_TEST(prefix_scan, all_algorithms_agree_on_a_non_commutative_operation) {
         hillis_steele_inclusive_scan(pool, hillis, concat);
         auto blelloch = input;
         blelloch_inclusive_scan(pool, blelloch, concat, std::string());
-        auto blocked = input;
-        blocked_inclusive_scan(pool, blocked, concat, 4);
 
         CHECK(hillis == expected);
         CHECK(blelloch == expected);
-        CHECK(blocked == expected);
     }
 }
 

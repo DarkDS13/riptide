@@ -8,7 +8,6 @@ block in the Silesia tarball, and with real chunk outputs.
 """
 import json
 import statistics as st
-import sys
 
 import profiler as pf
 from silesia_run import SIL, chunk_bounds

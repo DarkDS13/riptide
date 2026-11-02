@@ -11,7 +11,6 @@ Both the sequential chain and the scan are checked against zlib.
 """
 import array
 import json
-import math
 import sys
 import zlib
 

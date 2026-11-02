@@ -17,8 +17,6 @@ GpuWindowResolver::~GpuWindowResolver() = default;
 
 bool GpuWindowResolver::available() noexcept { return false; }
 
-std::string GpuWindowResolver::device_name() const { return {}; }
-
 GpuWindowResolver::Maps GpuWindowResolver::allocate_maps(std::size_t) const { return {}; }
 
 WindowResolution GpuWindowResolver::resolve(const ByteWindow&, const Maps&, WindowStrategy) const {
