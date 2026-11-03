@@ -95,6 +95,14 @@ python3 bench/analyze.py results                   # writes results/summary.{md,
 
 The suite takes about 20 minutes on the machine above.
 
+## Live demo
+
+```bash
+bench/demo.sh build ~/riptide-data                 # press Enter between steps; NOPAUSE=1 runs straight through
+```
+
+It times gzip against riptide, checks that both outputs have the same SHA-256, shows the six stages and the window step for the serial, blocked and GPU strategies, draws two thread timelines and runs the tests. Plug in the charger and close other apps first: riptide holds the whole output in memory, so swapping or Low Power Mode makes it look no faster than gzip.
+
 ## Repository layout
 
 ```
@@ -110,7 +118,7 @@ src/riptide/
   pipeline/    partitioner (M1), parallel and sequential decompressors, statistics
 tools/         riptide command-line tool and riptide_bench benchmark driver
 tests/         49 unit and integration tests in 14 CTest suites
-bench/         dataset generator, experiment runner, statistical analysis, timeline plots
+bench/         dataset generator, experiment runner, statistical analysis, timeline plots, live demo
 results/       raw CSVs and summary of the evaluation
 pilot/         Python prototypes and Silesia measurements from the methodology phase
 docs/          design and evaluation notes, reports and presentations of all three phases
