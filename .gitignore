@@ -10,6 +10,10 @@ pilot/silesia/files/
 pilot/silesia/gz/
 pilot/silesia/*.tar.gz
 
+# Build output
+build/
+*.dylib
+
 # OS / editor
 .DS_Store
 *.swp
