@@ -1,6 +1,7 @@
 // riptide: decompress a gzip file in parallel.
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <fstream>
@@ -18,6 +19,11 @@
 #include <riptide/pipeline/sequential_decompressor.hpp>
 
 #include "cli_options.hpp"
+
+#if defined(_WIN32)
+#include <fcntl.h>
+#include <io.h>
+#endif
 
 namespace {
 
@@ -126,6 +132,13 @@ Arguments parse_arguments(int argc, char** argv) {
 }
 
 void write_all(std::span<const std::uint8_t> data, const std::string& path) {
+#if defined(_WIN32)
+    // Standard output starts in text mode on Windows, which would turn every \n
+    // byte of the decompressed data into \r\n.
+    if (path.empty()) {
+        _setmode(_fileno(stdout), _O_BINARY);
+    }
+#endif
     std::FILE* file = path.empty() ? stdout : std::fopen(path.c_str(), "wb");
     if (file == nullptr) {
         throw std::runtime_error("cannot open '" + path + "' for writing: " + std::strerror(errno));

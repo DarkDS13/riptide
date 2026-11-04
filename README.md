@@ -81,6 +81,20 @@ Useful options: `-P N` threads, `--chunk-size 512K`, `--window serial|hillis-ste
 
 The GPU strategies need Apple silicon; on other systems, or with `-DRIPTIDE_GPU=OFF`, the build uses a stub and they report that no GPU is available.
 
+### Windows
+
+Riptide builds on Windows 10 and later with Visual Studio 2022 or MinGW-w64. The easiest way to get zlib is [vcpkg](https://vcpkg.io):
+
+```powershell
+vcpkg install zlib:x64-windows
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+cmake --build build --config Release
+ctest --test-dir build -C Release
+build\Release\riptide.exe -v -o output.tar input.tar.gz
+```
+
+Visual Studio is a multi-configuration generator, so the programs land in `build\Release\` and `ctest` needs `-C Release`. The CPU window strategies are all available; the GPU ones report that no GPU is available. With MSVC, `-DRIPTIDE_SANITIZE=ON` enables AddressSanitizer only, and ThreadSanitizer is not available. The evaluation and demo scripts below are bash and use macOS tools such as `/usr/bin/time -l`, so run them on macOS, Linux or WSL.
+
 Sanitizer builds: `-DRIPTIDE_SANITIZE=ON` (AddressSanitizer and UndefinedBehaviorSanitizer) or `-DRIPTIDE_SANITIZE_THREAD=ON` (ThreadSanitizer); the test suite runs clean under both.
 
 ## Reproducing the evaluation
@@ -102,6 +116,14 @@ bench/demo.sh build ~/riptide-data                 # press Enter between steps; 
 ```
 
 It times gzip against riptide, checks that both outputs have the same SHA-256, shows the six stages and the window step for the serial, blocked and GPU strategies, draws two thread timelines and runs the tests. Plug in the charger and close other apps first: riptide holds the whole output in memory, so swapping or Low Power Mode makes it look no faster than gzip.
+
+On Windows, run the PowerShell version (Windows PowerShell 5.1 or PowerShell 7) with the same arguments:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File bench\demo.ps1 build $HOME\riptide-data    # -NoPause runs straight through
+```
+
+It runs the same steps, except that the window step compares the serial and blocked strategies, because there is no GPU path on Windows. Copy `silesia_x5.tar.gz` into the dataset directory from a machine that has it. Windows has no gzip of its own, so the script compares against the gzip that comes with Git for Windows, or against Python's `gzip` module if Git isn't installed (zlib either way). Drawing the timelines needs Python with Pillow; without it the script points to the JSON traces for ui.perfetto.dev. If no build exists yet, it builds one first; set `VCPKG_ROOT` so CMake finds zlib.
 
 ## Repository layout
 

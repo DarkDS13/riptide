@@ -9,6 +9,7 @@
 #include <zlib.h>
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <functional>
@@ -204,7 +205,7 @@ bool same(std::span<const std::uint8_t> a, const std::vector<std::uint8_t>& b) {
 }
 
 std::string base_name(const std::string& path) {
-    const std::size_t slash = path.find_last_of('/');
+    const std::size_t slash = path.find_last_of("/\\");
     return slash == std::string::npos ? path : path.substr(slash + 1);
 }
 

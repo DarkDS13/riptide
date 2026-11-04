@@ -35,9 +35,16 @@ find_package(Threads REQUIRED)
 # check gzip data, and by the benchmark driver as a single-threaded baseline.
 find_package(ZLIB REQUIRED)
 
-set(RIPTIDE_WARNINGS -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wno-sign-conversion)
-if(RIPTIDE_WARNINGS_AS_ERRORS)
-    list(APPEND RIPTIDE_WARNINGS -Werror)
+if(MSVC)
+    set(RIPTIDE_WARNINGS /W4)
+    if(RIPTIDE_WARNINGS_AS_ERRORS)
+        list(APPEND RIPTIDE_WARNINGS /WX)
+    endif()
+else()
+    set(RIPTIDE_WARNINGS -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wno-sign-conversion)
+    if(RIPTIDE_WARNINGS_AS_ERRORS)
+        list(APPEND RIPTIDE_WARNINGS -Werror)
+    endif()
 endif()
 
 add_library(riptide STATIC
@@ -69,12 +76,26 @@ endif()
 target_include_directories(riptide PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_options(riptide PRIVATE ${RIPTIDE_WARNINGS})
 target_link_libraries(riptide PUBLIC Threads::Threads)
+if(WIN32)
+    # Windows 10 API (PrefetchVirtualMemory); fopen, getenv and strerror without
+    # MSVC's deprecation warnings.
+    target_compile_definitions(riptide PUBLIC _WIN32_WINNT=0x0A00 _CRT_SECURE_NO_WARNINGS)
+endif()
+if(MSVC)
+    # Sources are UTF-8, and __cplusplus should report the real standard version.
+    target_compile_options(riptide PUBLIC /utf-8 /Zc:__cplusplus)
+endif()
 
-if(RIPTIDE_SANITIZE)
+if(RIPTIDE_SANITIZE AND MSVC)
+    # MSVC has AddressSanitizer only.
+    target_compile_options(riptide PUBLIC /fsanitize=address)
+elseif(RIPTIDE_SANITIZE)
     target_compile_options(riptide PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
     target_link_options(riptide PUBLIC -fsanitize=address,undefined)
 endif()
-if(RIPTIDE_SANITIZE_THREAD)
+if(RIPTIDE_SANITIZE_THREAD AND MSVC)
+    message(FATAL_ERROR "ThreadSanitizer is not available with MSVC")
+elseif(RIPTIDE_SANITIZE_THREAD)
     target_compile_options(riptide PUBLIC -fsanitize=thread -fno-omit-frame-pointer)
     target_link_options(riptide PUBLIC -fsanitize=thread)
 endif()
