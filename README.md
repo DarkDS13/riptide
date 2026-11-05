@@ -121,8 +121,8 @@ tools/         riptide command-line tool and riptide_bench benchmark driver
 tests/         49 unit and integration tests in 14 CTest suites
 bench/         dataset generator, experiment runner, statistical analysis, timeline plots, live demo and its measurements
 results/       raw CSVs and summary of the evaluation
-pilot/         Python prototypes and Silesia measurements from the methodology phase
-docs/          design and evaluation notes, reports and presentations of all three phases
+scripts/       Silesia download (into data/, which git ignores)
+docs/          design and evaluation notes, final report and presentation
 ```
 
 ## Branches
