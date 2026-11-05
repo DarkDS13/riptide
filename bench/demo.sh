@@ -3,30 +3,50 @@
 #
 #   bench/demo.sh BUILD_DIR DATASET_DIR
 #
-# DATASET_DIR must contain silesia_x5.tar.gz (built by bench/datasets.py). The build is
-# made first if BUILD_DIR has no riptide binary. The script pauses before each step
-# (press Enter); NOPAUSE=1 runs straight through and NOOPEN=1 does not open the images.
+# DATASET_DIR must contain silesia_x5.tar.gz and logs.ndjson.gz (built by
+# bench/datasets.py). The build is made first if BUILD_DIR has no riptide binary.
+#
+# Every step measures its numbers live (median of REPS runs, default 3) and prints them
+# next to the report's numbers; the last step prints all of them on one screen.
+# Before each step the script waits: Enter runs it, s skips it.
+#
+#   STEPS="1 2 5 12"  run only these steps        NOPAUSE=1  do not wait between steps
+#   REPS=5            runs per measurement        NOOPEN=1   do not open the timelines
+#   RAPIDGZIP=path    rapidgzip to compare with (default: the one on PATH, if any)
 set -e
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD=${1:?build directory}
 DATA=${2:?dataset directory}
 FILE="$DATA/silesia_x5.tar.gz"
-OUT="${TMPDIR:-/tmp}/riptide-demo"
+LOGS="$DATA/logs.ndjson.gz"
+OUT="${TMPDIR:-/tmp}"; OUT="${OUT%/}/riptide-demo"
 RIPTIDE="$BUILD/riptide"
+STATS="python3 $REPO/bench/demo_stats.py"
+export NUMBERS="$OUT/numbers.json"
 
-bold() { printf '\n\033[1;36m== %s\033[0m\n' "$1"; }
 show() { printf '\033[1;32m$\033[0m %s\n' "$*"; }
-pause() { [ -n "$NOPAUSE" ] || read -r -p "   [Enter] " _; }
 warn() { printf '\033[1;33mWarning:\033[0m %s\n' "$1"; }
 
-[ -f "$FILE" ] || { echo "No $FILE; build it with: python3 bench/datasets.py $DATA"; exit 1; }
+# step N TITLE: prints the title and returns 0 if the step should run.
+step() {
+    if [ -n "$STEPS" ] && [[ " $STEPS " != *" $1 "* ]]; then return 1; fi
+    printf '\n\033[1;36m== %s. %s\033[0m\n' "$1" "$2"
+    [ -n "$NOPAUSE" ] && return 0
+    read -r -p "   [Enter] run, [s] skip " answer
+    [ "$answer" != s ]
+}
+
+for f in "$FILE" "$LOGS"; do
+    [ -f "$f" ] || { echo "No $f; build it with: python3 bench/datasets.py $DATA"; exit 1; }
+done
 if [ ! -x "$RIPTIDE" ]; then
     echo "Building riptide (first time only, about a minute)..."
     cmake -S "$REPO" -B "$BUILD" -DCMAKE_BUILD_TYPE=Release >/dev/null
     cmake --build "$BUILD" -j >/dev/null
 fi
 mkdir -p "$OUT"
+rm -f "$NUMBERS"
 
 # riptide holds the whole 1 GB output in memory (about 3 GB at peak). On battery,
 # in Low Power Mode or with little free memory it runs much slower than measured.
@@ -37,55 +57,90 @@ if [ "$(uname)" = Darwin ]; then
     [ "${swap_mb:-0}" -gt 1024 ] && warn "${swap_mb} MB of memory is swapped out; quit other apps or restart first."
 fi
 
-# Read the file once so that both tools start with it in memory.
+# Read the files once so that every tool starts with them in memory.
 "$RIPTIDE" -t "$FILE" >/dev/null
+"$RIPTIDE" -t "$LOGS" >/dev/null
 gzip -dc "$FILE" >/dev/null
 
-bold "1. The file: Silesia x5, a normal .gz file made by gzip"
-show "ls -lh silesia_x5.tar.gz"
-ls -lh "$FILE" | awk '{print $5, $NF}'
-pause
+if step 1 "The file: Silesia x5, a normal .gz file made by gzip"; then
+    show "gzip -l silesia_x5.tar.gz"
+    gzip -l "$FILE" | awk 'NR == 2 { printf "   %.0f MB compressed, %.0f MB unzipped, ratio %.2f\n", $1 / 1e6, $2 / 1e6, $2 / $1 }'
+    echo "   Made by plain gzip, with no index and no special flags."
+fi
 
-bold "2. Same output as gzip, but faster (output thrown away, just timing)"
-show "time gzip -dc silesia_x5.tar.gz > /dev/null"
-time gzip -dc "$FILE" >/dev/null
-show "time riptide silesia_x5.tar.gz > /dev/null"
-time "$RIPTIDE" "$FILE" >/dev/null
-pause
+if step 2 "Faster than gzip"; then
+    show "time gzip -dc silesia_x5.tar.gz > /dev/null"
+    time gzip -dc "$FILE" >/dev/null
+    show "time riptide silesia_x5.tar.gz > /dev/null"
+    time "$RIPTIDE" "$FILE" >/dev/null
+    echo
+    echo "   Median of ${REPS:-3} runs each, taken in turns:"
+    $STATS race "$RIPTIDE" "$FILE"
+fi
 
-bold "3. Byte for byte the same as gzip"
-show "gzip -dc silesia_x5.tar.gz | shasum -a 256"
-gzip -dc "$FILE" | shasum -a 256
-show "riptide silesia_x5.tar.gz | shasum -a 256"
-"$RIPTIDE" "$FILE" | shasum -a 256
-pause
+if step 3 "Byte for byte the same as gzip"; then
+    show "gzip -dc silesia_x5.tar.gz | shasum -a 256"
+    a=$(gzip -dc "$FILE" | shasum -a 256 | cut -d' ' -f1); echo "   $a"
+    show "riptide silesia_x5.tar.gz | shasum -a 256"
+    b=$("$RIPTIDE" "$FILE" | shasum -a 256 | cut -d' ' -f1); echo "   $b"
+    if [ "$a" = "$b" ]; then echo "   Same hash: the output is identical."; else echo "   HASHES DIFFER"; exit 1; fi
+    echo "   report: 1,600 of 1,600 timed runs matched zlib byte for byte."
+fi
 
-bold "4. Where the time goes: the six stages"
-show "riptide -v -t silesia_x5.tar.gz"
-"$RIPTIDE" -v -t "$FILE"
-pause
+if step 4 "Where the time goes: the six stages (4 MiB chunks)"; then
+    show "riptide -t --json silesia_x5.tar.gz"
+    $STATS stages "$RIPTIDE" "$FILE"
+fi
 
-bold "5. M3: the window step with small chunks (64 KiB, 5,205 chunks)"
-for w in serial blocked gpu-blocked; do
-    show "riptide -v -t --chunk-size 64K --window $w silesia_x5.tar.gz"
-    "$RIPTIDE" -v -t --repeat 3 --chunk-size 64K --window "$w" "$FILE" 2>&1 |
-        grep -E "^riptide:|window resolution  "
-done
-pause
+if step 5 "Scaling: 1 to 10 threads"; then
+    show "riptide -t -P N silesia_x5.tar.gz    (N = 1, 2, 4, 10)"
+    $STATS threads "$RIPTIDE" "$FILE"
+fi
 
-bold "6. Timelines of every thread (our tracer)"
-for w in serial gpu-blocked; do
-    show "riptide -t --chunk-size 64K --window $w --trace $w.json silesia_x5.tar.gz"
-    "$RIPTIDE" -t --repeat 3 --chunk-size 64K --window "$w" --trace "$OUT/$w.json" "$FILE"
-    python3 "$REPO/bench/plot_trace.py" "$OUT/$w.json" "$OUT/$w.png" --title "window strategy: $w"
-done
-echo "   Opening the two timelines. The JSON files can also be dropped into ui.perfetto.dev."
-[ -n "$NOOPEN" ] || open "$OUT/serial.png" "$OUT/gpu-blocked.png"
-pause
+if step 6 "M3: every window strategy with small chunks (64 KiB), about a minute"; then
+    show "riptide -t --chunk-size 64K --window STRATEGY silesia_x5.tar.gz"
+    $STATS window "$RIPTIDE" "$FILE"
+fi
 
-bold "7. Tests: all compared against zlib"
-show "ctest --test-dir build"
-ctest --test-dir "$BUILD" 2>&1 | tail -4
+if step 7 "M3 across chunk sizes: serial, blocked, GPU blocked, about a minute"; then
+    show "riptide -t --chunk-size SIZE --window STRATEGY silesia_x5.tar.gz"
+    $STATS chunks "$RIPTIDE" "$FILE"
+fi
+
+if step 8 "M1: split chunks that would overflow (logs, 16 MiB chunks, 4x budget)"; then
+    show "riptide -t --chunk-size 16M --max-expansion 4 --overflow serial|split logs.ndjson.gz"
+    $STATS overflow "$RIPTIDE" "$LOGS"
+fi
+
+if step 9 "Peak memory: big against small chunks"; then
+    show "/usr/bin/time -l riptide -t --chunk-size 4M|512K silesia_x5.tar.gz"
+    $STATS memory "$RIPTIDE" "$FILE"
+fi
+
+if step 10 "Against rapidgzip 0.16.0 (the base paper's tool)"; then
+    show "rapidgzip -t -P N silesia_x5.tar.gz"
+    $STATS rapidgzip "$RIPTIDE" "$FILE"
+fi
+
+if step 11 "Timelines of every thread (our tracer)"; then
+    for w in serial gpu-blocked; do
+        show "riptide -t --chunk-size 64K --window $w --trace $w.json silesia_x5.tar.gz"
+        "$RIPTIDE" -t --repeat 3 --chunk-size 64K --window "$w" --trace "$OUT/$w.json" "$FILE"
+        python3 "$REPO/bench/plot_trace.py" "$OUT/$w.json" "$OUT/$w.png" --title "window strategy: $w"
+    done
+    echo "   Opening the two timelines. The JSON files can also be dropped into ui.perfetto.dev."
+    [ -n "$NOOPEN" ] || open "$OUT/serial.png" "$OUT/gpu-blocked.png"
+fi
+
+if step 12 "Tests: all compared against zlib"; then
+    show "ctest --test-dir build"
+    ctest --test-dir "$BUILD" 2>&1 | tail -4
+    echo "   report: 49 tests in 14 suites, also clean under ASan, UBSan and TSan."
+fi
+
+if step 13 "All the numbers from this run"; then
+    $STATS summary
+fi
 
 echo
-echo "Trace files are in $OUT"
+echo "Numbers and trace files are in $OUT"
