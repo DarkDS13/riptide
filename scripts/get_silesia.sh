@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Download the Silesia corpus and build the gzip test set used in our experiments:
-#   pilot/silesia/gz/<file>.gz    each of the 12 files, gzip -6
-#   pilot/silesia/silesia.tar.gz  tarball of all 12 files, gzip -6 (as in the base paper)
+#   data/silesia/gz/<file>.gz    each of the 12 files, gzip -6
+#   data/silesia/silesia.tar.gz  tarball of all 12 files, gzip -6 (as in the base paper)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-DIR="$ROOT/pilot/silesia"
+DIR="$ROOT/data/silesia"
 URL="https://sun.aei.polsl.pl/~sdeor/corpus/silesia.zip"
 FILES="dickens mozilla mr nci ooffice osdb reymont samba sao webster x-ray xml"
 

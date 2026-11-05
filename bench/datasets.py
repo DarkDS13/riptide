@@ -29,7 +29,7 @@ import tarfile
 import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SILESIA = os.path.join(ROOT, "pilot", "silesia")
+SILESIA = os.path.join(ROOT, "data", "silesia")
 MiB = 1 << 20
 
 
