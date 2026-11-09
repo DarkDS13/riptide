@@ -140,19 +140,29 @@ if step 11 "Pipeline visualizer: the run replayed from our tracer"; then
         show "riptide -t --chunk-size $1 --window $2 --trace $1-$2.json silesia_x5.tar.gz"
         "$RIPTIDE" -t --repeat 2 --chunk-size "$1" --window "$2" --trace "$OUT/$1-$2.json" "$FILE"
     done
+    traces=("$OUT/4M-blocked.json=4 MiB chunks, blocked (default)" "$OUT/64K-serial.json=64 KiB, serial window"
+            "$OUT/64K-blocked.json=64 KiB, blocked scan" "$OUT/64K-gpu-blocked.json=64 KiB, GPU blocked scan")
     show "python3 bench/pipeline_viz.py pipeline.html ..."
-    python3 "$REPO/bench/pipeline_viz.py" "$OUT/pipeline.html" \
-        "$OUT/4M-blocked.json=4 MiB chunks, blocked (default)" "$OUT/64K-serial.json=64 KiB, serial window" \
-        "$OUT/64K-blocked.json=64 KiB, blocked scan" "$OUT/64K-gpu-blocked.json=64 KiB, GPU blocked scan"
+    python3 "$REPO/bench/pipeline_viz.py" "$OUT/pipeline.html" "${traces[@]}"
     if python3 -c "import PIL" 2>/dev/null; then    # still images need Pillow; the visualizer does not
         for w in serial gpu-blocked; do
             python3 "$REPO/bench/plot_trace.py" "$OUT/64K-$w.json" "$OUT/$w.png" --title "window strategy: $w"
         done
         echo "   Still images: $OUT/serial.png and gpu-blocked.png"
     fi
-    echo "   Opening the visualizer in the browser: press Play, or click a stage to jump to it."
     echo "   The JSON files also open in ui.perfetto.dev."
-    [ -n "$NOOPEN" ] || open "$OUT/pipeline.html"
+    how=b
+    [ -n "$NOPAUSE" ] || read -r -p "   [t] replay in this terminal, [b] open in the browser, [Enter] both " how
+    if [ "$how" != b ]; then
+        show "python3 bench/pipeline_term.py ..."
+        echo "   Keys: space pause, 1-4 pick a run, arrows step, z zoom to the stage, + - speed, q quit"
+        sleep 2
+        python3 "$REPO/bench/pipeline_term.py" "${traces[@]}"
+    fi
+    if [ "$how" != t ] && [ -z "$NOOPEN" ]; then
+        echo "   Opening the visualizer in the browser: press Play, or click a stage to jump to it."
+        open "$OUT/pipeline.html"
+    fi
 fi
 
 if step 12 "Tests: all compared against zlib"; then
