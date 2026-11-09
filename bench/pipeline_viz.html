@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Riptide Pipeline</title>
+<!-- Template for bench/pipeline_viz.py, which puts the trace data in place of DATA. -->
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --line: #dfe3ea; --track: #e9ecf1;
+  --ink: #17202c; --ink-2: #4a5566; --ink-3: #7b8594; --accent: #1f6feb;
+  --now: #f2b400; --shadow: 0 1px 2px rgba(20, 30, 50, .06), 0 2px 8px rgba(20, 30, 50, .05);
+  --decode: #3b75c4; --chain: #969696; --window: #e88e26; --gpu: #cc3e3e;
+  --replace: #46a05a; --verify: #8c5ab4; --wait: #c9cdd3;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141b; --panel: #161d27; --line: #29323f; --track: #222b37;
+    --ink: #e8edf4; --ink-2: #aab4c2; --ink-3: #7c8796; --accent: #5b9dff;
+    --now: #ffd23f; --shadow: none; --wait: #4a525d;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141b; --panel: #161d27; --line: #29323f; --track: #222b37;
+  --ink: #e8edf4; --ink-2: #aab4c2; --ink-3: #7c8796; --accent: #5b9dff;
+  --now: #ffd23f; --shadow: none; --wait: #4a525d;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+main { max-width: 1280px; margin: 0 auto; padding: 20px 16px 40px; }
+h1 { font-size: 22px; margin: 0; letter-spacing: -.01em; }
+.sub { color: var(--ink-2); margin: 2px 0 0; }
+.top { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { border: 1px solid var(--line); background: var(--panel); color: var(--ink-2); border-radius: 8px;
+  padding: 6px 12px; font: inherit; cursor: pointer; }
+.tab[aria-selected="true"] { border-color: var(--accent); color: var(--ink); box-shadow: inset 0 0 0 1px var(--accent); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow);
+  padding: 14px 16px; margin-top: 14px; }
+.panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin: 0 0 10px; font-weight: 600; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.btn { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 6px 12px;
+  font: inherit; cursor: pointer; min-width: 44px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; min-width: 84px; font-weight: 600; }
+#scrub { flex: 1 1 260px; accent-color: var(--accent); }
+.clock { font-variant-numeric: tabular-nums; min-width: 190px; color: var(--ink-2); }
+.clock b { color: var(--ink); font-size: 16px; }
+label.opt { color: var(--ink-2); display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+select { font: inherit; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; }
+.stages { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.stage { position: relative; border: 1px solid var(--line); border-radius: 10px; padding: 10px 10px 12px;
+  cursor: pointer; background: var(--bg); overflow: hidden; transition: border-color .15s, box-shadow .15s; }
+.stage .n { font-size: 12px; color: var(--ink-3); }
+.stage .name { font-weight: 650; margin: 1px 0 4px; }
+.stage .ms { font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: 13px; }
+.stage .bar { position: absolute; left: 0; bottom: 0; height: 4px; width: 0; background: var(--c); }
+.stage.on { border-color: var(--c); box-shadow: inset 0 0 0 1px var(--c); }
+.stage.done .name::after { content: "  done"; font-weight: 400; font-size: 12px; color: var(--ink-3); }
+.now { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; margin-top: 12px; }
+.what { border-left: 3px solid var(--c, var(--accent)); padding: 2px 0 2px 12px; }
+.what .t { font-weight: 650; font-size: 15px; }
+.what p { margin: 4px 0 0; color: var(--ink-2); }
+.counts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.count { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+.count .v { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.count .k { font-size: 12px; color: var(--ink-3); }
+canvas { display: block; width: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; color: var(--ink-2); font-size: 12.5px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; }
+.note { color: var(--ink-3); font-size: 12.5px; margin: 8px 0 0; }
+#tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--bg); padding: 6px 9px; border-radius: 6px;
+  font-size: 12.5px; line-height: 1.4; max-width: 340px; display: none; z-index: 10; white-space: pre-line; }
+.keys { color: var(--ink-3); font-size: 12.5px; }
+@media (max-width: 820px) {
+  .stages { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .now { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div>
+      <h1>Riptide pipeline, replayed from the trace</h1>
+      <p class="sub" id="sub"></p>
+    </div>
+    <div class="tabs" id="tabs" role="tablist"></div>
+  </div>
+
+  <section class="panel">
+    <div class="controls">
+      <button class="btn primary" id="play">Play</button>
+      <button class="btn" id="restart" title="Back to the start (Home)">Restart</button>
+      <input type="range" id="scrub" min="0" max="1000" value="0" aria-label="time">
+      <div class="clock" id="clock"></div>
+      <label class="opt">Whole run plays in
+        <select id="speed">
+          <option value="10">10 s</option><option value="20" selected>20 s</option>
+          <option value="40">40 s</option><option value="120">2 min</option><option value="600">10 min</option>
+        </select>
+      </label>
+    </div>
+    <p class="keys">Space plays and pauses, arrow keys step, click a stage to jump to it. The same slow-motion factor is used for every tab, so the tabs can be compared.</p>
+  </section>
+
+  <section class="panel">
+    <h2>The six stages</h2>
+    <div class="stages" id="stages"></div>
+    <div class="now">
+      <div class="what" id="what"><div class="t"></div><p></p></div>
+      <div class="counts" id="counts"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Every chunk of the file</h2>
+    <canvas id="strip" height="170"></canvas>
+    <div class="legend" id="stripLegend"></div>
+    <p class="note" id="stripNote"></p>
+  </section>
+
+  <section class="panel">
+    <div class="controls" style="justify-content: space-between">
+      <h2 style="margin: 0">Every thread</h2>
+      <div class="controls">
+        <label class="opt">Show
+          <select id="view">
+            <option value="run">the whole run</option>
+            <option value="stage">only the current stage</option>
+          </select>
+        </label>
+        <label class="opt"><input type="checkbox" id="ghost" checked> show what is still to come</label>
+        <label class="opt"><input type="checkbox" id="same"> same time scale on every tab</label>
+      </div>
+    </div>
+    <canvas id="lanes" height="320" style="margin-top: 10px"></canvas>
+    <div class="legend" id="laneLegend"></div>
+  </section>
+</main>
+<div id="tip"></div>
+
+<script>
+const DATA = /*DATA*/null;
+
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const CAT = DATA.categories;
+const STAGE_INFO = {
+  partition: ["Find chunks", "decode",
+    "The compressed file is cut into chunks of the same size, one task per chunk. Nothing is decoded yet."],
+  decode: ["Decode", "decode",
+    "Every thread decodes its own chunk at the same time. A chunk does not know the 32 KiB that come before it, so a back-reference into that area is written as a marker (0x8000 + j means byte j of the window before this chunk) instead of a byte."],
+  chain: ["Link chunks", "chain",
+    "Each chunk must end exactly where the next one starts. Chunks that started at a wrong guess are thrown away and decoded again."],
+  windows: ["Window step (M3)", "window", null],
+  replace: ["Replace markers", "replace",
+    "Every chunk now knows the 32 KiB before it, so all threads swap their markers for the real bytes at the same time."],
+  verify: ["CRC-32 check", "verify",
+    "Each thread computes the CRC-32 of its piece of the output. The pieces are combined into one CRC and checked against the gzip trailer."],
+};
+const WINDOW_TEXT = {
+  serial: "One by one, as rapidgzip does it: the last 32 KiB of each chunk is worked out from the chunk before it, so each chunk waits for the previous one.",
+  blocked: "Our blocked scan. Each thread first composes the window maps of its own block of chunks, then a short serial pass carries one window across the block borders, then every block resolves its own chunks in parallel.",
+  "gpu-blocked": "Our blocked scan on the GPU. About a hundred blocks compose their maps at the same time, one window carry runs across the blocks, then all blocks resolve together. Each step is 32,768 lookups that do not depend on each other.",
+  gpu: "The window step runs on the GPU.",
+  other: "The window maps are combined with a parallel prefix scan.",
+};
+
+// What happens in each part of the window stage; {b} is the number of blocks.
+const STEP_TEXT = {
+  "window maps": "First every thread turns the last 32 KiB of each of its chunks into a window map: for each of the 32,768 positions, the byte or the marker that ends up there. This part is fully parallel and is not counted as the window step.",
+  "prepare": "The maps are ready; the scan is about to start (riptide counts the window step from here).",
+  "serial chain": "One by one, as rapidgzip does it: each chunk's window is worked out from the chunk before it, so every chunk waits for the previous one. Watch row 2 fill from left to right.",
+  "compose block": "Scan step 1 of 3: the chunks are split into {b} blocks, one per thread. Every block composes the maps of its own chunks into one map, all blocks at the same time.",
+  "carry between blocks": "Scan step 2 of 3: one short serial pass carries the real window across the {b} block borders. Only {b} steps have to wait for each other here.",
+  "resolve block": "Scan step 3 of 3: now every block knows the window it starts with, so all {b} blocks work out the window of each of their chunks at the same time.",
+  "compose blocks": "Scan step 1 of 3, on the GPU: {b} blocks compose their maps at the same time. Each step is 32,768 lookups that do not depend on each other, which suits the GPU.",
+  "resolve blocks": "Scan step 3 of 3, on the GPU: all {b} blocks work out the window of each of their chunks at the same time.",
+};
+
+let runIndex = 0, t = 0, playing = false, lastFrame = null;
+const longest = Math.max(...DATA.runs.map((r) => r.total));
+const run = () => DATA.runs[runIndex];
+const fmt = (ms) => ms >= 100 ? ms.toFixed(0) : ms >= 10 ? ms.toFixed(1) : ms.toFixed(2);
+
+function colour(cat) { return css("--" + cat) || "#888"; }
+
+// ---- Tabs and header ------------------------------------------------------------------
+const tabs = document.getElementById("tabs");
+DATA.runs.forEach((r, i) => {
+  const b = document.createElement("button");
+  b.className = "tab"; b.role = "tab"; b.textContent = r.label;
+  b.onclick = () => selectRun(i);
+  tabs.appendChild(b);
+});
+
+function selectRun(i) {
+  runIndex = i;
+  t = Math.min(t, run().total);
+  [...tabs.children].forEach((b, j) => b.setAttribute("aria-selected", String(i === j)));
+  const r = run();
+  document.getElementById("sub").textContent =
+    `${r.chunks.toLocaleString()} chunks, ${(r.output_bytes / 1e6).toFixed(0)} MB out, ` +
+    `${r.threads.filter((n) => n !== "GPU").length} threads (main and ${r.threads.filter((n) => n.startsWith("worker")).length} workers)${r.threads.includes("GPU") ? " and the GPU" : ""}, ` +
+    `whole run ${fmt(r.total)} ms (${(r.output_bytes / 1e6 / (r.total / 1000)).toFixed(0)} MB/s)`;
+  buildStages();
+  buildLegends();
+  draw();
+}
+
+// ---- Stage cards ----------------------------------------------------------------------
+const stagesEl = document.getElementById("stages");
+function buildStages() {
+  stagesEl.innerHTML = "";
+  run().stages.forEach(([name, s, e], i) => {
+    const [title, cat] = STAGE_INFO[name];
+    const c = name === "windows" && run().strategy.startsWith("gpu") ? "gpu" : cat;
+    const d = document.createElement("div");
+    d.className = "stage"; d.style.setProperty("--c", colour(c));
+    const scan = run().scan, extra = name === "windows" ? `<br>scan itself ${fmt(scan[1] - scan[0])} ms` : "";
+    d.innerHTML = `<div class="n">${i + 1}</div><div class="name">${title}</div>` +
+      `<div class="ms">${fmt(e - s)} ms, ${(100 * (e - s) / run().total).toFixed(1)}%${extra}</div><div class="bar"></div>`;
+    d.onclick = () => { t = s; draw(); };
+    stagesEl.appendChild(d);
+  });
+}
+
+function currentStage() {
+  const st = run().stages;
+  let k = 0;
+  st.forEach(([, s], i) => { if (t >= s) k = i; });
+  return k;
+}
+
+// ---- Counters -------------------------------------------------------------------------
+const countsEl = document.getElementById("counts");
+function counts() {
+  const c = run().chunk, n = run().chunks;
+  let decoded = 0, known = 0, final = 0;
+  for (let i = 0; i < n; i++) {
+    if (c.de[i] >= 0 && c.de[i] <= t) decoded++;
+    if (c.ke[i] >= 0 && c.ke[i] <= t) known++;
+    if (c.re[i] >= 0 && c.re[i] <= t) final++;
+  }
+  let crcDone = 0, crcAll = 0;
+  for (const [s, e] of run().crc) {
+    crcAll += e - s;
+    crcDone += Math.max(0, Math.min(t, e) - s);
+  }
+  const busy = run().work.filter((w) => w[3] <= t && t < w[3] + w[4] && w[1] !== CAT.indexOf("wait")).length;
+  const items = [
+    [`${decoded.toLocaleString()} / ${n.toLocaleString()}`, "chunks decoded"],
+    [`${known.toLocaleString()} / ${n.toLocaleString()}`, "windows known"],
+    [`${final.toLocaleString()} / ${n.toLocaleString()}`, "chunks with real bytes"],
+    [`${busy}`, "threads busy right now"],
+  ];
+  countsEl.innerHTML = items.map(([v, k]) => `<div class="count"><div class="v">${v}</div><div class="k">${k}</div></div>`).join("");
+}
+
+// ---- Chunk strip ----------------------------------------------------------------------
+const strip = document.getElementById("strip");
+function stripRows() {
+  const gpu = run().strategy.startsWith("gpu");
+  return [
+    ["decoded, markers left in", "decode", (c, i) => phase(c.ds[i], c.de[i])],
+    ["window known", gpu ? "gpu" : "window", (c, i) => {
+      if (c.cs[i] >= 0) {
+        if (t < c.cs[i]) return 0;
+        if (t < c.ce[i]) return 1;
+        if (t < c.ks[i]) return 3;
+      }
+      return phase(c.ks[i], c.ke[i]);
+    }],
+    ["real bytes written", "replace", (c, i) => phase(c.rs[i], c.re[i])],
+  ];
+}
+function phase(s, e) { if (s < 0) return 2; if (t < s) return 0; if (t < e) return 1; return 2; }
+
+function setup(canvas) {
+  const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.height / (canvas._dpr || 1);
+  if (!canvas._h) canvas._h = canvas.height;
+  canvas.width = w * dpr; canvas.height = canvas._h * dpr; canvas.style.height = canvas._h + "px"; canvas._dpr = dpr;
+  const g = canvas.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return [g, w, canvas._h];
+}
+
+const LABEL_W = 170;
+function drawStrip() {
+  const [g, W, H] = setup(strip);
+  const c = run().chunk, n = run().chunks, rows = stripRows();
+  const x0 = LABEL_W, w = W - x0, rowH = 34, gap = 14;
+  g.clearRect(0, 0, W, H);
+  g.font = "13px -apple-system, Segoe UI, Helvetica, Arial, sans-serif"; g.textBaseline = "middle";
+  const track = css("--track"), now = css("--now");
+  rows.forEach(([label, cat, state], ri) => {
+    const y = 6 + ri * (rowH + gap), col = colour(cat);
+    g.fillStyle = css("--ink-2"); g.fillText(`${ri + 1}. ${label}`, 0, y + rowH / 2);
+    g.fillStyle = track; g.fillRect(x0, y, w, rowH);
+    const cell = w / n, inset = cell >= 5 ? 1 : 0;
+    let i = 0;
+    while (i < n) {              // runs of chunks in the same state are drawn as one block
+      const s = state(c, i);
+      let j = i + 1;
+      while (j < n && state(c, j) === s) j++;
+      if (s !== 0) {
+        g.globalAlpha = s === 3 ? 0.35 : 1;
+        g.fillStyle = s === 1 ? now : col;
+        g.fillRect(x0 + i * cell + inset, y, Math.max((j - i) * cell - 2 * inset, 0.6), rowH);
+        g.globalAlpha = 1;
+      }
+      i = j;
+    }
+  });
+  const crc = run().crc, y = 6 + 3 * (rowH + gap);
+  let done = 0, all = 0;
+  for (const [s, e] of crc) { all += e - s; done += Math.max(0, Math.min(t, e) - s); }
+  g.fillStyle = css("--ink-2"); g.fillText("4. CRC-32 checked", 0, y + 8);
+  g.fillStyle = track; g.fillRect(x0, y, w, 16);
+  g.fillStyle = colour("verify"); g.fillRect(x0, y, all ? w * done / all : 0, 16);
+}
+
+strip.addEventListener("mousemove", (ev) => {
+  const rect = strip.getBoundingClientRect(), x = ev.clientX - rect.left;
+  if (x < LABEL_W) return hideTip();
+  const n = run().chunks, i = Math.min(n - 1, Math.floor((x - LABEL_W) / (rect.width - LABEL_W) * n)), c = run().chunk;
+  const at = (v) => v >= 0 ? `${fmt(v)} ms` : "not needed";
+  showTip(ev, `chunk ${i.toLocaleString()} of ${n.toLocaleString()}\n` +
+    `decoded: ${at(c.ds[i])} to ${at(c.de[i])}\n` +
+    (c.cs[i] >= 0 ? `map composed in its block: ${at(c.ce[i])}\n` : "") +
+    `window known: ${i < 2 ? "not needed (start of the file)" : at(c.ke[i])}\n` +
+    `real bytes: ${at(c.rs[i])} to ${at(c.re[i])}`);
+});
+strip.addEventListener("mouseleave", hideTip);
+
+// ---- Thread lanes ---------------------------------------------------------------------
+const lanes = document.getElementById("lanes");
+function viewRange() {
+  if (document.getElementById("view").value === "stage") {
+    const [, s, e] = run().stages[currentStage()], pad = Math.max((e - s) * 0.04, 0.01);
+    return [Math.max(0, s - pad), e + pad];
+  }
+  return [0, document.getElementById("same").checked ? longest : run().total];
+}
+
+function niceStep(span, target) {
+  const raw = span / target, p = Math.pow(10, Math.floor(Math.log10(raw)));
+  return [1, 2, 5, 10].map((m) => m * p).find((s) => s >= raw);
+}
+
+function drawLanes() {
+  const r = run(), rows = r.threads.length, laneH = 20, top = 34;
+  lanes._h = top + rows * laneH + 26; lanes.height = lanes._h;
+  const [g, W, H] = setup(lanes);
+  const [v0, v1] = viewRange(), x0 = 80, w = W - x0 - 4;
+  const X = (ms) => x0 + (ms - v0) / (v1 - v0) * w;
+  g.clearRect(0, 0, W, H);
+  g.font = "12px -apple-system, Segoe UI, Helvetica, Arial, sans-serif"; g.textBaseline = "middle";
+
+  r.stages.forEach(([name, s, e]) => {   // stage band
+    const a = Math.max(X(s), x0), b = Math.min(X(e), x0 + w);
+    if (b <= a) return;
+    const cat = name === "windows" && r.strategy.startsWith("gpu") ? "gpu" : STAGE_INFO[name][1];
+    g.globalAlpha = 0.22; g.fillStyle = colour(cat); g.fillRect(a, 4, b - a, 20); g.globalAlpha = 1;
+    g.fillStyle = css("--ink-2");
+    const title = STAGE_INFO[name][0];
+    if (b - a > g.measureText(title).width + 8) g.fillText(title, a + 4, 14);
+  });
+
+  r.threads.forEach((name, i) => {
+    const y = top + i * laneH;
+    g.fillStyle = css("--ink-3"); g.fillText(name, 0, y + laneH / 2);
+    g.fillStyle = css("--track"); g.fillRect(x0, y + 2, w, laneH - 4);
+  });
+
+  const ghost = document.getElementById("ghost").checked;
+  for (const [row, cat, , s, d] of r.work) {
+    const e = s + d;
+    if (e < v0 || s > v1) continue;
+    const y = top + row * laneH + 2, a = Math.max(X(s), x0), full = Math.min(X(e), x0 + w);
+    g.fillStyle = colour(CAT[cat]);
+    if (s <= t) {
+      const b = Math.min(X(Math.min(e, t)), x0 + w);
+      g.fillRect(a, y, Math.max(b - a, 0.7), laneH - 4);
+    }
+    if (ghost && e > t) {
+      const a2 = Math.max(X(Math.max(s, t)), x0);
+      g.globalAlpha = 0.16; g.fillRect(a2, y, Math.max(full - a2, 0.7), laneH - 4); g.globalAlpha = 1;
+    }
+  }
+  g.fillStyle = css("--ink");
+  for (const [row, ts] of r.steals) {
+    if (ts > t || ts < v0 || ts > v1) continue;
+    g.fillRect(X(ts), top + row * laneH + 1, 1, 4);
+  }
+
+  const step = niceStep(v1 - v0, 8), axisY = top + rows * laneH + 12;
+  g.fillStyle = css("--ink-3"); g.textAlign = "center";
+  for (let v = Math.ceil(v0 / step) * step; v <= v1; v += step) {
+    g.fillRect(X(v), axisY - 9, 1, 4);
+    g.fillText(`${+v.toFixed(3)} ms`, X(v), axisY + 3);
+  }
+  g.textAlign = "left";
+  if (t >= v0 && t <= v1) {
+    g.fillStyle = css("--now"); g.fillRect(X(t) - 1, 2, 2, top + rows * laneH - 2);
+  }
+  lanes._map = { X, x0, w, v0, v1, top, laneH };
+}
+
+lanes.addEventListener("mousemove", (ev) => {
+  const m = lanes._map; if (!m) return;
+  const rect = lanes.getBoundingClientRect(), x = ev.clientX - rect.left, y = ev.clientY - rect.top;
+  const row = Math.floor((y - m.top) / m.laneH), ms = m.v0 + (x - m.x0) / m.w * (m.v1 - m.v0);
+  const slack = (m.v1 - m.v0) / m.w * 2;
+  const hit = run().work.find((w) => w[0] === row && w[3] - slack <= ms && ms <= w[3] + w[4] + slack);
+  if (!hit) return hideTip();
+  const args = Object.entries(hit[5] || {}).map(([k, v]) => `${k.replace(/_/g, " ")}: ${v.toLocaleString()}`).join("\n");
+  showTip(ev, `${hit[2]} (${run().threads[hit[0]]})\nstarts at ${fmt(hit[3])} ms, takes ${fmt(hit[4])} ms${args ? "\n" + args : ""}`);
+});
+lanes.addEventListener("mouseleave", hideTip);
+
+// ---- Legends and tooltip --------------------------------------------------------------
+function buildLegends() {
+  const gpu = run().strategy.startsWith("gpu"), sw = (c) => `<i style="background:${c}"></i>`;
+  document.getElementById("stripLegend").innerHTML =
+    `<span>${sw(css("--track"))}not yet</span><span>${sw(css("--now"))}being worked on now</span>` +
+    `<span>${sw(colour("decode"))}decoded</span>` +
+    `<span><i style="background:${colour(gpu ? "gpu" : "window")};opacity:.35"></i>map composed inside its block</span>` +
+    `<span>${sw(colour(gpu ? "gpu" : "window"))}window known</span><span>${sw(colour("replace"))}real bytes written</span>`;
+  document.getElementById("stripNote").textContent = run().strategy === "serial"
+    ? "With the serial window step every chunk waits for the one before it, so row 2 fills from left to right, one chunk at a time."
+    : run().strategy.includes("blocked")
+      ? "In row 2 every block of chunks is worked on at the same time. Inside a block the chunks go one after another, so their times are spread evenly over the block's task."
+      : "Hover over a chunk to see its times.";
+  const used = new Set(run().work.map((w) => CAT[w[1]]));
+  const names = { decode: "decode chunk", chain: "link / decode again", window: "window maps and CPU scan", gpu: "window scan on the GPU",
+    replace: "replace markers", verify: "CRC-32", wait: "waiting for the GPU" };
+  document.getElementById("laneLegend").innerHTML = CAT.filter((c) => used.has(c))
+    .map((c) => `<span>${sw(colour(c))}${names[c]}</span>`).join("") +
+    `<span><i style="background:${css("--ink")};width:2px"></i>a thread stole a task</span>` +
+    `<span><i style="background:${css("--now")};width:3px"></i>now</span>`;
+}
+
+const tip = document.getElementById("tip");
+function showTip(ev, text) {
+  tip.textContent = text; tip.style.display = "block";
+  const x = Math.min(ev.clientX + 14, window.innerWidth - tip.offsetWidth - 8);
+  tip.style.left = x + "px"; tip.style.top = (ev.clientY + 14) + "px";
+}
+function hideTip() { tip.style.display = "none"; }
+
+function windowText(r) {
+  const steps = r.window_steps;
+  let key = null;
+  for (const [k, s] of steps) if (t >= s) key = k;
+  if (key === "window maps" && t >= steps[0][2]) key = "prepare";
+  const text = STEP_TEXT[key] || WINDOW_TEXT[r.strategy] || WINDOW_TEXT.other;
+  return text.replaceAll("{b}", r.blocks);
+}
+
+// ---- Frame ----------------------------------------------------------------------------
+function draw() {
+  const r = run(), k = currentStage(), [name, s, e] = r.stages[k];
+  [...stagesEl.children].forEach((d, i) => {
+    const [, si, ei] = r.stages[i];
+    d.classList.toggle("on", i === k && t < r.total);
+    d.classList.toggle("done", t >= ei);
+    d.querySelector(".bar").style.width = `${100 * Math.max(0, Math.min(1, (t - si) / Math.max(ei - si, 1e-9)))}%`;
+  });
+  const [title, cat] = STAGE_INFO[name];
+  const what = document.getElementById("what");
+  what.style.setProperty("--c", colour(name === "windows" && r.strategy.startsWith("gpu") ? "gpu" : cat));
+  what.querySelector(".t").textContent = t >= r.total ? "Done: the output is complete and checked"
+    : `Now: stage ${k + 1} of 6, ${title} (${fmt(e - s)} ms)`;
+  what.querySelector("p").textContent = t >= r.total
+    ? `${(r.output_bytes / 1e6).toFixed(0)} MB in ${fmt(r.total)} ms. Press Restart or pick another tab to compare.`
+    : name === "windows" ? windowText(r) : STAGE_INFO[name][2];
+  document.getElementById("clock").innerHTML = `<b>${fmt(t)} ms</b> of ${fmt(r.total)} ms`;
+  document.getElementById("scrub").value = Math.round(1000 * t / r.total);
+  counts();
+  drawStrip();
+  drawLanes();
+}
+
+function frame(now) {
+  if (!playing) { lastFrame = null; return; }
+  if (lastFrame !== null) {
+    const seconds = +document.getElementById("speed").value;
+    t += (now - lastFrame) * longest / (seconds * 1000);
+    if (t >= run().total) { t = run().total; setPlaying(false); }
+  }
+  lastFrame = now;
+  draw();
+  if (playing) requestAnimationFrame(frame);
+}
+
+function setPlaying(on) {
+  playing = on;
+  document.getElementById("play").textContent = on ? "Pause" : "Play";
+  if (on) { if (t >= run().total) t = 0; requestAnimationFrame(frame); }
+}
+
+document.getElementById("play").onclick = () => setPlaying(!playing);
+document.getElementById("restart").onclick = () => { t = 0; draw(); };
+document.getElementById("scrub").oninput = (e) => { t = e.target.value / 1000 * run().total; draw(); };
+for (const id of ["view", "ghost", "same", "speed"]) document.getElementById(id).onchange = draw;
+window.addEventListener("resize", draw);
+window.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "SELECT" || e.target.tagName === "INPUT" && e.target.type !== "range") return;
+  if (e.code === "Space") { e.preventDefault(); setPlaying(!playing); }
+  else if (e.code === "ArrowRight") { t = Math.min(run().total, t + run().total / 100); draw(); }
+  else if (e.code === "ArrowLeft") { t = Math.max(0, t - run().total / 100); draw(); }
+  else if (e.code === "Home") { t = 0; draw(); }
+});
+
+selectRun(0);
+</script>
+</body>
+</html>

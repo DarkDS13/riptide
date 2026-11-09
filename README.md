@@ -102,7 +102,7 @@ bench/demo.sh build ~/riptide-data                 # Enter runs a step, s skips 
 STEPS="2 6 8 13" bench/demo.sh build ~/riptide-data   # only some steps; REPS=5 for more runs per number
 ```
 
-Each step measures its numbers live (median of `REPS` runs, default 3) with `bench/demo_stats.py` and prints them next to the report's: gzip against riptide and the SHA-256 of both outputs on Silesia and Silesia × 5, the six stages, scaling on 1 to 10 threads, every window strategy at 64 KiB chunks and serial, blocked and GPU blocked across chunk sizes (M3), serial against split overflow on the logs file (M1), peak memory, rapidgzip if it is installed, two thread timelines and the tests. The last step prints every number on one screen. A full run takes about five minutes. Plug in the charger and close other apps first: riptide holds the whole output in memory, so swapping or Low Power Mode makes it look no faster than gzip.
+Each step measures its numbers live (median of `REPS` runs, default 3) with `bench/demo_stats.py` and prints them next to the report's: gzip against riptide and the SHA-256 of both outputs on Silesia and Silesia × 5, the six stages, scaling on 1 to 10 threads, every window strategy at 64 KiB chunks and serial, blocked and GPU blocked across chunk sizes (M3), serial against split overflow on the logs file (M1), peak memory, rapidgzip if it is installed, the pipeline visualizer and the tests. The last step prints every number on one screen. Step 11 opens `bench/pipeline_viz.py`'s page in the browser: the run replayed from its trace in slow motion, with the six stages, the state of every chunk and every thread's tasks, for 4 MiB chunks and for 64 KiB chunks with the serial, blocked and GPU window step. A full run takes about five minutes. Plug in the charger and close other apps first: riptide holds the whole output in memory, so swapping or Low Power Mode makes it look no faster than gzip.
 
 ## Repository layout
 
@@ -119,7 +119,7 @@ src/riptide/
   pipeline/    partitioner (M1), parallel and sequential decompressors, statistics
 tools/         riptide command-line tool and riptide_bench benchmark driver
 tests/         49 unit and integration tests in 14 CTest suites
-bench/         dataset generator, experiment runner, statistical analysis, timeline plots, live demo and its measurements
+bench/         dataset generator, experiment runner, statistical analysis, timeline plots, live demo, its measurements and the pipeline visualizer
 results/       raw CSVs and summary of the evaluation
 scripts/       Silesia download (into data/, which git ignores)
 docs/          design and evaluation notes, final report and presentation
