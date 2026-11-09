@@ -134,14 +134,25 @@ if step 10 "Against rapidgzip 0.16.0 (the base paper's tool)"; then
     $STATS rapidgzip "$RIPTIDE" "$FILE"
 fi
 
-if step 11 "Timelines of every thread (our tracer)"; then
-    for w in serial gpu-blocked; do
-        show "riptide -t --chunk-size 64K --window $w --trace $w.json silesia_x5.tar.gz"
-        "$RIPTIDE" -t --repeat 3 --chunk-size 64K --window "$w" --trace "$OUT/$w.json" "$FILE"
-        python3 "$REPO/bench/plot_trace.py" "$OUT/$w.json" "$OUT/$w.png" --title "window strategy: $w"
+if step 11 "Pipeline visualizer: the run replayed from our tracer"; then
+    for run in "4M blocked" "64K serial" "64K blocked" "64K gpu-blocked"; do
+        set -- $run
+        show "riptide -t --chunk-size $1 --window $2 --trace $1-$2.json silesia_x5.tar.gz"
+        "$RIPTIDE" -t --repeat 2 --chunk-size "$1" --window "$2" --trace "$OUT/$1-$2.json" "$FILE"
     done
-    echo "   Opening the two timelines. The JSON files can also be dropped into ui.perfetto.dev."
-    [ -n "$NOOPEN" ] || open "$OUT/serial.png" "$OUT/gpu-blocked.png"
+    show "python3 bench/pipeline_viz.py pipeline.html ..."
+    python3 "$REPO/bench/pipeline_viz.py" "$OUT/pipeline.html" \
+        "$OUT/4M-blocked.json=4 MiB chunks, blocked (default)" "$OUT/64K-serial.json=64 KiB, serial window" \
+        "$OUT/64K-blocked.json=64 KiB, blocked scan" "$OUT/64K-gpu-blocked.json=64 KiB, GPU blocked scan"
+    if python3 -c "import PIL" 2>/dev/null; then    # still images need Pillow; the visualizer does not
+        for w in serial gpu-blocked; do
+            python3 "$REPO/bench/plot_trace.py" "$OUT/64K-$w.json" "$OUT/$w.png" --title "window strategy: $w"
+        done
+        echo "   Still images: $OUT/serial.png and gpu-blocked.png"
+    fi
+    echo "   Opening the visualizer in the browser: press Play, or click a stage to jump to it."
+    echo "   The JSON files also open in ui.perfetto.dev."
+    [ -n "$NOOPEN" ] || open "$OUT/pipeline.html"
 fi
 
 if step 12 "Tests: all compared against zlib"; then
