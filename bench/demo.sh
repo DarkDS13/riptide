@@ -3,8 +3,8 @@
 #
 #   bench/demo.sh BUILD_DIR DATASET_DIR
 #
-# DATASET_DIR must contain silesia_x5.tar.gz and logs.ndjson.gz (built by
-# bench/datasets.py). The build is made first if BUILD_DIR has no riptide binary.
+# DATASET_DIR must contain silesia.tar.gz (the Silesia corpus), silesia_x5.tar.gz and
+# logs.ndjson.gz (built by bench/datasets.py). The build is made first if BUILD_DIR has no riptide binary.
 #
 # Every step measures its numbers live (median of REPS runs, default 3) and prints them
 # next to the report's numbers; the last step prints all of them on one screen.
@@ -18,6 +18,7 @@ set -e
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD=${1:?build directory}
 DATA=${2:?dataset directory}
+SILESIA="$DATA/silesia.tar.gz"
 FILE="$DATA/silesia_x5.tar.gz"
 LOGS="$DATA/logs.ndjson.gz"
 OUT="${TMPDIR:-/tmp}"; OUT="${OUT%/}/riptide-demo"
@@ -37,7 +38,7 @@ step() {
     [ "$answer" != s ]
 }
 
-for f in "$FILE" "$LOGS"; do
+for f in "$SILESIA" "$FILE" "$LOGS"; do
     [ -f "$f" ] || { echo "No $f; build it with: python3 bench/datasets.py $DATA"; exit 1; }
 done
 if [ ! -x "$RIPTIDE" ]; then
@@ -58,32 +59,43 @@ if [ "$(uname)" = Darwin ]; then
 fi
 
 # Read the files once so that every tool starts with them in memory.
-"$RIPTIDE" -t "$FILE" >/dev/null
-"$RIPTIDE" -t "$LOGS" >/dev/null
+for f in "$SILESIA" "$FILE" "$LOGS"; do "$RIPTIDE" -t "$f" >/dev/null; done
+gzip -dc "$SILESIA" >/dev/null
 gzip -dc "$FILE" >/dev/null
 
-if step 1 "The file: Silesia x5, a normal .gz file made by gzip"; then
-    show "gzip -l silesia_x5.tar.gz"
-    gzip -l "$FILE" | awk 'NR == 2 { printf "   %.0f MB compressed, %.0f MB unzipped, ratio %.2f\n", $1 / 1e6, $2 / 1e6, $2 / $1 }'
-    echo "   Made by plain gzip, with no index and no special flags."
+if step 1 "The files: the Silesia corpus and Silesia x5, normal .gz files made by gzip"; then
+    for f in "$SILESIA" "$FILE"; do
+        show "gzip -l $(basename "$f")"
+        gzip -l "$(readlink -f "$f")" | awk 'NR == 2 { printf "   %.0f MB compressed, %.0f MB unzipped, ratio %.2f\n", $1 / 1e6, $2 / 1e6, $2 / $1 }'
+    done
+    echo "   Silesia: the standard corpus of 12 real files (text, XML, executables, a database,"
+    echo "   images, medical data), also used by the rapidgzip paper. Silesia x5 is the same"
+    echo "   tarball five times in one gzip member. Made by plain gzip, with no index."
 fi
 
-if step 2 "Faster than gzip"; then
-    show "time gzip -dc silesia_x5.tar.gz > /dev/null"
-    time gzip -dc "$FILE" >/dev/null
-    show "time riptide silesia_x5.tar.gz > /dev/null"
-    time "$RIPTIDE" "$FILE" >/dev/null
-    echo
-    echo "   Median of ${REPS:-3} runs each, taken in turns:"
-    $STATS race "$RIPTIDE" "$FILE"
+if step 2 "Faster than gzip, on Silesia and Silesia x5"; then
+    for f in "$SILESIA" "$FILE"; do
+        name=$(basename "$f")
+        printf '\n   \033[1m%s\033[0m\n' "$name"
+        show "time gzip -dc $name > /dev/null"
+        time gzip -dc "$f" >/dev/null
+        show "time riptide $name > /dev/null"
+        time "$RIPTIDE" "$f" >/dev/null
+        echo
+        echo "   Median of ${REPS:-3} runs each, taken in turns:"
+        $STATS race "$RIPTIDE" "$f"
+    done
 fi
 
-if step 3 "Byte for byte the same as gzip"; then
-    show "gzip -dc silesia_x5.tar.gz | shasum -a 256"
-    a=$(gzip -dc "$FILE" | shasum -a 256 | cut -d' ' -f1); echo "   $a"
-    show "riptide silesia_x5.tar.gz | shasum -a 256"
-    b=$("$RIPTIDE" "$FILE" | shasum -a 256 | cut -d' ' -f1); echo "   $b"
-    if [ "$a" = "$b" ]; then echo "   Same hash: the output is identical."; else echo "   HASHES DIFFER"; exit 1; fi
+if step 3 "Byte for byte the same as gzip, on Silesia and Silesia x5"; then
+    for f in "$SILESIA" "$FILE"; do
+        name=$(basename "$f")
+        show "gzip -dc $name | shasum -a 256"
+        a=$(gzip -dc "$f" | shasum -a 256 | cut -d' ' -f1); echo "   $a"
+        show "riptide $name | shasum -a 256"
+        b=$("$RIPTIDE" "$f" | shasum -a 256 | cut -d' ' -f1); echo "   $b"
+        if [ "$a" = "$b" ]; then echo "   Same hash: the output is identical."; else echo "   HASHES DIFFER"; exit 1; fi
+    done
     echo "   report: 1,600 of 1,600 timed runs matched zlib byte for byte."
 fi
 
