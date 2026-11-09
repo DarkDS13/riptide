@@ -102,7 +102,7 @@ bench/demo.sh build ~/riptide-data                 # Enter runs a step, s skips 
 STEPS="2 6 8 13" bench/demo.sh build ~/riptide-data   # only some steps; REPS=5 for more runs per number
 ```
 
-Each step measures its numbers live (median of `REPS` runs, default 3) with `bench/demo_stats.py` and prints them next to the report's: gzip against riptide, the SHA-256 of both outputs, the six stages, scaling on 1 to 10 threads, every window strategy at 64 KiB chunks and serial, blocked and GPU blocked across chunk sizes (M3), serial against split overflow on the logs file (M1), peak memory, rapidgzip if it is installed, two thread timelines and the tests. The last step prints every number on one screen. A full run takes about five minutes. Plug in the charger and close other apps first: riptide holds the whole output in memory, so swapping or Low Power Mode makes it look no faster than gzip.
+Each step measures its numbers live (median of `REPS` runs, default 3) with `bench/demo_stats.py` and prints them next to the report's: gzip against riptide and the SHA-256 of both outputs on Silesia and Silesia × 5, the six stages, scaling on 1 to 10 threads, every window strategy at 64 KiB chunks and serial, blocked and GPU blocked across chunk sizes (M3), serial against split overflow on the logs file (M1), peak memory, rapidgzip if it is installed, two thread timelines and the tests. The last step prints every number on one screen. A full run takes about five minutes. Plug in the charger and close other apps first: riptide holds the whole output in memory, so swapping or Low Power Mode makes it look no faster than gzip.
 
 ## Repository layout
 

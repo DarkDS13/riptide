@@ -11,7 +11,7 @@ NUMBERS (default $TMPDIR/riptide-demo/numbers.json); the "summary" step prints t
 all at the end.
 
 Steps:
-  race       gzip -dc against riptide, both writing to /dev/null
+  race       gzip -dc against riptide, both writing to /dev/null (any file)
   stages     time of each pipeline stage at the default 4 MiB chunks
   threads    throughput and efficiency on 1, 2, 4 and 10 threads
   window     every window strategy at 64 KiB chunks (M3)
@@ -93,6 +93,10 @@ def x(a, b):
     return f"{a / b:.2f}x"
 
 
+RACE_REPORT = {"silesia.tar.gz": "2.14x faster than zlib, 2,600 MB/s (Silesia, 10 threads)",
+               "silesia_x5.tar.gz": "2.47x faster than zlib, 3,008 MB/s (Silesia x5, 10 threads)"}
+
+
 def race(riptide, file):
     gzip_runs, rip_runs = [], []
     for _ in range(REPS):           # interleaved, so that both see the same machine
@@ -106,8 +110,10 @@ def race(riptide, file):
           [["gzip -dc", f"{g:.3f}", f"{out / g / 1e6:,.0f}", "1"],
            ["riptide", f"{r:.3f}", f"{out / r / 1e6:,.0f}", f"{cores:.1f}"]])
     print(f"\n   riptide is {g / r:.2f}x faster than gzip (median of {REPS} runs each)")
-    print("   report: 2.47x faster than zlib, 3,008 MB/s (Silesia x5, 10 threads)")
-    save("race", {"gzip_s": g, "riptide_s": r, "speedup": g / r, "cores": cores,
+    name = os.path.basename(file)
+    if name in RACE_REPORT:
+        print("   report: " + RACE_REPORT[name])
+    save("race" if name == "silesia_x5.tar.gz" else "race " + name, {"gzip_s": g, "riptide_s": r, "speedup": g / r, "cores": cores,
                   "mb_s": out / r / 1e6})
 
 
@@ -244,10 +250,14 @@ def rapidgzip(riptide, file):
 def summary(riptide=None, file=None):
     n = load()
     rows = []
+    if "race silesia.tar.gz" in n:
+        r = n["race silesia.tar.gz"]
+        rows += [["Silesia: riptide vs gzip", f"{r['speedup']:.2f}x ({r['gzip_s']:.2f} s vs {r['riptide_s']:.2f} s)", "2.14x"],
+                 ["Silesia: throughput", f"{r['mb_s']:,.0f} MB/s", "2,600 MB/s"]]
     if "race" in n:
         r = n["race"]
-        rows += [["riptide vs gzip", f"{r['speedup']:.2f}x ({r['gzip_s']:.2f} s vs {r['riptide_s']:.2f} s)", "2.47x"],
-                 ["throughput", f"{r['mb_s']:,.0f} MB/s, {r['cores']:.1f} cores busy", "3,008 MB/s"]]
+        rows += [["Silesia x5: riptide vs gzip", f"{r['speedup']:.2f}x ({r['gzip_s']:.2f} s vs {r['riptide_s']:.2f} s)", "2.47x"],
+                 ["Silesia x5: throughput", f"{r['mb_s']:,.0f} MB/s, {r['cores']:.1f} cores busy", "3,008 MB/s"]]
     if "stages" in n:
         s = n["stages"]
         rows.append(["decode / replace share", f"{100 * s['decode_seconds'] / s['total_seconds']:.0f}% / "
